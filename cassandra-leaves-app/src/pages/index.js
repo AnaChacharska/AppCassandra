@@ -141,8 +141,8 @@ export default function Home({ leavesData }) {
                     Previous
                 </button>
                 <span>
-                    Page {currentPage} of {totalPages}
-                </span>
+          Page {currentPage} of {totalPages}
+        </span>
                 <button
                     onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
                     disabled={currentPage === totalPages}
@@ -152,95 +152,106 @@ export default function Home({ leavesData }) {
             </div>
 
             <style jsx>{`
-              .container {
-                padding: 20px;
-                background-image: url('/Screenshot 2024-12-11 234657.png');
-                background-size: cover;
-                background-position: center;
-                height: 100vh;
-                color: white;
-                font-family: Arial, Helvetica, sans-serif;
-                background-color: rgba(0, 0, 0, 0.5);
-                background-blend-mode: lighten;
-              }
-              .title {
-                font-size: 2.5rem;
-                font-weight: bold;
-                text-align: center;
-                margin-bottom: 20px;
-              }
-              .search-bar {
-                margin-bottom: 20px;
-                padding: 10px;
-                width: 100%;
-                font-size: 1rem;
-                border: 1px solid white;
-                border-radius: 5px;
-                background: rgba(255, 255, 255, 0.2);
-                color: white;
-              }
-              .form {
-                margin-bottom: 20px;
-                display: flex;
-                gap: 10px;
-              }
-              .form input {
-                padding: 10px;
-                font-size: 1rem;
-                border: 1px solid white;
-                border-radius: 5px;
-                background: rgba(255, 255, 255, 0.2);
-                color: white;
-              }
-              .form button {
-                padding: 10px 15px;
-                font-size: 1rem;
-                color: white;
-                background: rgba(0, 0, 0, 0.8);
-                border: 1px solid white;
-                border-radius: 5px;
-                cursor: pointer;
-              }
-              table {
-                width: 100%;
-                border-collapse: collapse;
-                background: rgba(0, 0, 0, 0.5);
-                border-radius: 10px;
-                overflow: hidden;
-              }
-              th,
-              td {
-                padding: 15px;
-                text-align: left;
-                border: 1px solid rgba(255, 255, 255, 0.2);
-                color: white;
-              }
-              th {
-                font-weight: bold;
-                background: rgba(0, 0, 0, 0.8);
-              }
-              tr:nth-child(even) {
-                background: rgba(255, 255, 255, 0.1);
-              }
-              tr:hover {
-                background: rgba(255, 255, 255, 0.2);
-              }
-              .pagination {
-                margin-top: 20px;
-                display: flex;
-                justify-content: center;
-                gap: 10px;
-              }
-              .pagination button {
-                padding: 10px 15px;
-                font-size: 1rem;
-                color: white;
-                background: rgba(0, 0, 0, 0.8);
-                border: 1px solid white;
-                border-radius: 5px;
-                cursor: pointer;
-              }
-            `}</style>
+        .container {
+          padding: 40px;
+          background: linear-gradient(to right, #6a11cb, #2575fc);
+          background-size: cover;
+          background-position: center;
+          color: white;
+          font-family: 'Poppins', sans-serif;
+          height: 150vh; 
+          display: flex;
+          flex-direction: column;
+          justify-content: space-between;
+        }
+        .title {
+          font-size: 2.8rem;
+          font-weight: 600;
+          text-align: center;
+          margin-bottom: 20px;
+          text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.6);
+        }
+        .search-bar {
+          margin-bottom: 20px;
+          padding: 12px;
+          width: 100%;
+          font-size: 1rem;
+          border: none;
+          border-radius: 5px;
+          background: rgba(255, 255, 255, 0.2);
+          color: white;
+          box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
+        }
+        .form {
+          margin-bottom: 20px;
+          display: flex;
+          gap: 15px;
+          justify-content: center;
+        }
+        .form input {
+          padding: 12px;
+          font-size: 1rem;
+          border-radius: 5px;
+          width: 200px;
+          background: rgba(255, 255, 255, 0.1);
+          color: white;
+          border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+        .form button {
+          padding: 12px 20px;
+          font-size: 1rem;
+          color: white;
+          background: rgba(0, 0, 0, 0.7);
+          border-radius: 5px;
+          cursor: pointer;
+          transition: 0.3s ease;
+        }
+        .form button:hover {
+          background: rgba(0, 0, 0, 0.8);
+        }
+        table {
+          width: 100%;
+          margin-top: 20px;
+          border-collapse: collapse;
+          background: rgba(0, 0, 0, 0.6);
+          border-radius: 10px;
+          overflow: hidden;
+        }
+        th,
+        td {
+          padding: 15px;
+          text-align: left;
+          color: white;
+        }
+        th {
+          background-color: rgba(0, 0, 0, 0.8);
+          font-weight: bold;
+        }
+        tr:nth-child(even) {
+          background: rgba(255, 255, 255, 0.1);
+        }
+        tr:hover {
+          background: rgba(255, 255, 255, 0.2);
+        }
+        .pagination {
+          margin-top: 20px;
+          display: flex;
+          justify-content: center;
+          gap: 15px;
+        }
+        .pagination button {
+          padding: 12px 20px;
+          font-size: 1rem;
+          color: white;
+          background: rgba(0, 0, 0, 0.7);
+          border-radius: 5px;
+          cursor: pointer;
+          transition: 0.3s ease;
+        }
+        .pagination button:hover {
+          background: rgba(0, 0, 0, 0.8);
+        }
+      `}</style>
         </div>
     );
 }
