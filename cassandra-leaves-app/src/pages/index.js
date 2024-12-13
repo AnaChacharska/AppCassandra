@@ -199,7 +199,7 @@ export default function Home({ leavesData }) {
                 color: #848d97;
               }
               .form button {
-                padding: 12px 20px;
+                padding: 12px 40px;
                 font-size: 1rem;
                 color: white;
                 background: #848d97;
