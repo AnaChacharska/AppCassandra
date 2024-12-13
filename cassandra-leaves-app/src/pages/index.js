@@ -1,10 +1,10 @@
+import Link from "next/link";
 import { useState } from "react";
 
 export default function Home({ leavesData }) {
     const [filteredData, setFilteredData] = useState(leavesData || []); // Default to an empty array
     const [searchQuery, setSearchQuery] = useState("");
     const [currentPage, setCurrentPage] = useState(1);
-    const [quotedContent, setQuotedContent] = useState("");
     const itemsPerPage = 10;
 
     const [formState, setFormState] = useState({ id: "", title: "", domain_name: "" });
@@ -67,17 +67,6 @@ export default function Home({ leavesData }) {
         alert("Record deleted successfully.");
     };
 
-    // Handle quoting content
-    const handleQuoteContent = (content) => {
-        setQuotedContent(content);
-    };
-
-    // Copy quoted content to clipboard
-    const handleCopyToClipboard = () => {
-        navigator.clipboard.writeText(quotedContent);
-        alert("Quoted content copied to clipboard!");
-    };
-
     // Pagination logic
     const totalPages = Math.ceil((filteredData?.length || 0) / itemsPerPage);
     const startIndex = (currentPage - 1) * itemsPerPage;
@@ -86,15 +75,6 @@ export default function Home({ leavesData }) {
     return (
         <div className="container">
             <h1 className="title">Cassandra Leaves Dashboard</h1>
-
-            {/* Quoted Content Section */}
-            {quotedContent && (
-                <div className="quoted-content">
-                    <h2>Quoted Content:</h2>
-                    <div dangerouslySetInnerHTML={{ __html: quotedContent }} />
-                    <button onClick={handleCopyToClipboard}>Copy to Clipboard</button>
-                </div>
-            )}
 
             {/* Search Bar */}
             <input
@@ -147,7 +127,9 @@ export default function Home({ leavesData }) {
                         <td>
                             <button onClick={() => handleEdit(item)}>Edit</button>
                             <button onClick={() => handleDelete(item.id)}>Delete</button>
-                            <button onClick={() => handleQuoteContent(item.content)}>Quote</button>
+                            <Link href={`/quote/${item.id}`}>
+                                <button>View</button>
+                            </Link>
                         </td>
                     </tr>
                 ))}
