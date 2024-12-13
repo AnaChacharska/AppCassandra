@@ -4,6 +4,7 @@ export default function Home({ leavesData }) {
     const [filteredData, setFilteredData] = useState(leavesData || []); // Default to an empty array
     const [searchQuery, setSearchQuery] = useState("");
     const [currentPage, setCurrentPage] = useState(1);
+    const [quotedContent, setQuotedContent] = useState("");
     const itemsPerPage = 10;
 
     const [formState, setFormState] = useState({ id: "", title: "", domain_name: "" });
@@ -66,6 +67,17 @@ export default function Home({ leavesData }) {
         alert("Record deleted successfully.");
     };
 
+    // Handle quoting content
+    const handleQuoteContent = (content) => {
+        setQuotedContent(content);
+    };
+
+    // Copy quoted content to clipboard
+    const handleCopyToClipboard = () => {
+        navigator.clipboard.writeText(quotedContent);
+        alert("Quoted content copied to clipboard!");
+    };
+
     // Pagination logic
     const totalPages = Math.ceil((filteredData?.length || 0) / itemsPerPage);
     const startIndex = (currentPage - 1) * itemsPerPage;
@@ -74,6 +86,15 @@ export default function Home({ leavesData }) {
     return (
         <div className="container">
             <h1 className="title">Cassandra Leaves Dashboard</h1>
+
+            {/* Quoted Content Section */}
+            {quotedContent && (
+                <div className="quoted-content">
+                    <h2>Quoted Content:</h2>
+                    <div dangerouslySetInnerHTML={{ __html: quotedContent }} />
+                    <button onClick={handleCopyToClipboard}>Copy to Clipboard</button>
+                </div>
+            )}
 
             {/* Search Bar */}
             <input
@@ -126,6 +147,7 @@ export default function Home({ leavesData }) {
                         <td>
                             <button onClick={() => handleEdit(item)}>Edit</button>
                             <button onClick={() => handleDelete(item.id)}>Delete</button>
+                            <button onClick={() => handleQuoteContent(item.content)}>Quote</button>
                         </td>
                     </tr>
                 ))}
@@ -152,106 +174,123 @@ export default function Home({ leavesData }) {
             </div>
 
             <style jsx>{`
-        .container {
-          padding: 40px;
-          background: linear-gradient(to right, #6a11cb, #2575fc);
-          background-size: cover;
-          background-position: center;
-          color: white;
-          font-family: 'Poppins', sans-serif;
-          height: 150vh; 
-          display: flex;
-          flex-direction: column;
-          justify-content: space-between;
-        }
-        .title {
-          font-size: 2.8rem;
-          font-weight: 600;
-          text-align: center;
-          margin-bottom: 20px;
-          text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.6);
-        }
-        .search-bar {
-          margin-bottom: 20px;
-          padding: 12px;
-          width: 100%;
-          font-size: 1rem;
-          border: none;
-          border-radius: 5px;
-          background: rgba(255, 255, 255, 0.2);
-          color: white;
-          box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
-        }
-        .form {
-          margin-bottom: 20px;
-          display: flex;
-          gap: 15px;
-          justify-content: center;
-        }
-        .form input {
-          padding: 12px;
-          font-size: 1rem;
-          border-radius: 5px;
-          width: 200px;
-          background: rgba(255, 255, 255, 0.1);
-          color: white;
-          border: 1px solid rgba(255, 255, 255, 0.3);
-        }
-        .form button {
-          padding: 12px 20px;
-          font-size: 1rem;
-          color: white;
-          background: rgba(0, 0, 0, 0.7);
-          border-radius: 5px;
-          cursor: pointer;
-          transition: 0.3s ease;
-        }
-        .form button:hover {
-          background: rgba(0, 0, 0, 0.8);
-        }
-        table {
-          width: 100%;
-          margin-top: 20px;
-          border-collapse: collapse;
-          background: rgba(0, 0, 0, 0.6);
-          border-radius: 10px;
-          overflow: hidden;
-        }
-        th,
-        td {
-          padding: 15px;
-          text-align: left;
-          color: white;
-        }
-        th {
-          background-color: rgba(0, 0, 0, 0.8);
-          font-weight: bold;
-        }
-        tr:nth-child(even) {
-          background: rgba(255, 255, 255, 0.1);
-        }
-        tr:hover {
-          background: rgba(255, 255, 255, 0.2);
-        }
-        .pagination {
-          margin-top: 20px;
-          display: flex;
-          justify-content: center;
-          gap: 15px;
-        }
-        .pagination button {
-          padding: 12px 20px;
-          font-size: 1rem;
-          color: white;
-          background: rgba(0, 0, 0, 0.7);
-          border-radius: 5px;
-          cursor: pointer;
-          transition: 0.3s ease;
-        }
-        .pagination button:hover {
-          background: rgba(0, 0, 0, 0.8);
-        }
-      `}</style>
+              @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@500;700&family=DM+Sans&display=swap');
+
+              .container {
+                padding: 40px;
+                background: url('Screenshot 2024-12-13 124659.png') no-repeat center center;
+                background-size: cover;
+                color: #1b1c1d;
+                font-family: 'Poppins', sans-serif;
+                min-height: 100vh;
+                display: flex;
+                flex-direction: column;
+              }
+              .title {
+                font-size: 2.8rem;
+                font-weight: 700;
+                text-align: center;
+                margin-bottom: 20px;
+                color: #1b1c1d;
+              }
+              .search-bar {
+                margin-bottom: 20px;
+                padding: 12px;
+                width: 100%;
+                font-size: 1rem;
+                border: 1px solid #d0d4d8;
+                border-radius: 5px;
+                color: #848d97;
+              }
+              .form {
+                margin-bottom: 20px;
+                display: flex;
+                gap: 15px;
+                justify-content: center;
+              }
+              .form input {
+                padding: 12px;
+                font-size: 1rem;
+                border: 1px solid #d0d4d8;
+                border-radius: 5px;
+                width: 200px;
+                color: #848d97;
+              }
+              .form button {
+                padding: 12px 20px;
+                font-size: 1rem;
+                color: white;
+                background: #848d97;
+                border-radius: 5px;
+                cursor: pointer;
+                transition: 0.3s ease;
+              }
+              .form button:hover {
+                background: #1b1c1d;
+              }
+              table {
+                width: 100%;
+                margin-top: 20px;
+                border-collapse: collapse;
+                border: 1px solid #d0d4d8;
+                border-radius: 5px;
+                overflow: hidden;
+                background-color: rgba(255, 255, 255, 0.6);
+              }
+              th,
+              td {
+                padding: 15px;
+                text-align: left;
+                border-bottom: 1px solid #d0d4d8;
+              }
+              th {
+                background-color: #e0e3e6;
+                font-weight: 500;
+              }
+              tr:nth-child(even) {
+                background: #f9f9f9;
+              }
+              tr:hover {
+                background: #e0e3e6;
+              }
+              .pagination {
+                margin-top: 20px;
+                display: flex;
+                justify-content: center;
+                gap: 15px;
+              }
+              .pagination button {
+                padding: 12px 20px;
+                font-size: 1rem;
+                color: white;
+                background: #848d97;
+                border-radius: 5px;
+                cursor: pointer;
+                transition: 0.3s ease;
+              }
+              .pagination button:hover {
+                background: #1b1c1d;
+              }
+              .quoted-content {
+                margin-bottom: 20px;
+                background-color: rgba(255, 255, 255, 0.6);
+                padding: 40px;
+                border-radius: 10px;
+                color: #1b1c1d;
+              }
+              .quoted-content h2 {
+                margin-bottom: 10px;
+              }
+              .quoted-content button {
+                margin-top: 10px;
+                padding: 10px 15px;
+                background: #848d97;
+                border: none;
+                color: white;
+                border-radius: 5px;
+                cursor: pointer;
+              }
+            `}</style>
         </div>
     );
 }
