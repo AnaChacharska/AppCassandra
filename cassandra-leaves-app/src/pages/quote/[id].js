@@ -26,15 +26,14 @@ export default function QuoteDetail({ leavesData }) {
             <h1 className="title">{record.title}</h1>
             <h2>{record.domain_name}</h2>
             <div className="details">
-                {/*<p><strong>ID:</strong> {record.id}</p>*/}
-                {/*<p><strong>Title:</strong> {record.title}</p>*/}
-                {/*<p><strong>Domain:</strong> {record.domain_name}</p>*/}
                 <p>
                     <img src={record.preview_picture} alt="Preview" className="preview" />
                 </p>
-                {/*<p><strong>Content:</strong></p>*/}
                 <div dangerouslySetInnerHTML={{ __html: record.content }} className="content" />
-                <p><strong>Tags:</strong> {record.tags.join(", ")}</p>
+
+                {/* Custom Tag Cloud */}
+
+
                 <p><strong>Language:</strong> {record.language}</p>
                 <p><strong>MIME Type:</strong> {record.mimetype}</p>
                 <p><strong>HTTP Status:</strong> {record.http_status}</p>
@@ -42,11 +41,15 @@ export default function QuoteDetail({ leavesData }) {
                 <p>
                     <strong>Source URL:</strong> <a href={record.url} target="_blank" rel="noopener noreferrer">{record.url}</a>
                 </p>
-
                 <p><strong>Wallabag Created At:</strong> {record.wallabag_created_at}</p>
                 <p><strong>Wallabag Updated At:</strong> {record.wallabag_updated_at}</p>
                 <p><strong>User Name:</strong> {record.user_name}</p>
                 <p><strong>User Email:</strong> {record.user_email}</p>
+                <div className="tag-cloud">
+                    {record.tags.map((tag, index) => (
+                        <span key={index} className="tag">{tag}</span>
+                    ))}
+                </div>
             </div>
             <button
                 className="button"
@@ -114,6 +117,20 @@ export default function QuoteDetail({ leavesData }) {
               h2:hover{
                 color: white;
                 font-weight: 300;
+              }
+              .tag-cloud {
+                margin-top: 20px;
+                display: flex;
+                flex-wrap: wrap;
+                gap: 10px;
+              }
+              .tag {
+                background: #f0f0f0;
+                border-radius: 20px;
+                padding: 5px 15px;
+                font-size: 1rem;
+                font-weight: 500;
+                color: #333;
               }
             `}</style>
         </div>
