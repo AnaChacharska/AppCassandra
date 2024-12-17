@@ -141,20 +141,25 @@ export default function QuoteDetail({ leavesData }) {
                 height: auto;
               }
               .go-top-button {
-                margin-top: 20px;
+                position: fixed; 
+                bottom: 20px; 
+                left: 20px; 
                 width: 40px;
                 height: 40px;
                 cursor: pointer;
-                align-self: center;
+                z-index: 1000;
                 transition: 0.3s ease;
               }
+
               .go-top-button:hover .top-icon {
                 transform: scale(1.1);
               }
+
               .top-icon {
                 width: 100%;
                 height: 100%;
               }
+              
               h2 {
                 color: lightslategray;
                 font-weight: 100;
