@@ -65,9 +65,9 @@ export default function QuoteDetail({ leavesData }) {
                 <p><strong>User Name:</strong> {record.user_name}</p>
                 <p><strong>User Email:</strong> {record.user_email}</p>
             </div>
-            <button className="button go-top-button">
-                Go to the top of the page
-            </button>
+            <div className="go-top-button">
+                <img src="/up-chevron_8213555.png" alt="Go to top" className="top-icon" />
+            </div>
 
             <style jsx>{`
               @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@500;700&family=DM+Sans&display=swap');
@@ -118,18 +118,20 @@ export default function QuoteDetail({ leavesData }) {
                 border-radius: 10px;
                 margin-top: 10px;
               }
-              .button {
+              .go-top-button {
                 margin-top: 20px;
-                padding: 12px 20px;
-                font-size: 1rem;
-                color: white;
-                background: #848d97;
-                border-radius: 5px;
+                width: 40px;
+                height: 40px;
                 cursor: pointer;
+                align-self: center;
                 transition: 0.3s ease;
               }
-              .button:hover {
-                background: #1b1c1d;
+              .go-top-button:hover .top-icon {
+                transform: scale(1.1);
+              }
+              .top-icon {
+                width: 100%;
+                height: 100%;
               }
               h2 {
                 color: lightslategray;
