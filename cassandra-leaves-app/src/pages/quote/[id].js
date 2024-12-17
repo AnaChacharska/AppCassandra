@@ -57,12 +57,13 @@ export default function QuoteDetail({ leavesData }) {
                 <p><strong>MIME Type:</strong> {record.mimetype}</p>
                 <p><strong>HTTP Status:</strong> {record.http_status}</p>
                 <p><strong>Published By:</strong> {record.published_by}</p>
-                <p>
-                    <strong>Source URL:</strong> <a href={record.url} target="_blank" rel="noopener noreferrer">{record.url}</a>
-                </p>
                 <p><strong>Wallabag Created At:</strong> {record.wallabag_created_at}</p>
                 <p><strong>Wallabag Updated At:</strong> {record.wallabag_updated_at}</p>
                 <div className="user-info">
+                    <div className="info-item">
+                        <img src="/link_6048306.png" alt="Link Icon" className="icon" />
+                        <span>{record.url}</span>
+                    </div>
                     <div className="info-item">
                         <img src="/mail_16866791.png" alt="Mail Icon" className="icon" />
                         <span>{record.user_email}</span>
