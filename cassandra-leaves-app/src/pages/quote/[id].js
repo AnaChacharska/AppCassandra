@@ -165,6 +165,8 @@ export default function QuoteDetail({ leavesData }) {
               h2:hover {
                 color: white;
                 font-weight: 300;
+                cursor: pointer; 
+                
               }
               .tag-cloud {
                 margin-top: 20px;
@@ -174,12 +176,20 @@ export default function QuoteDetail({ leavesData }) {
                 word-wrap: break-word;
               }
               .tag {
-                background: #f0f0f0;
+                background: #e8fbf8; 
+                border: 1px solid #ccc; 
                 border-radius: 20px;
                 padding: 5px 15px;
                 font-size: 1rem;
-                font-weight: 500;
-                color: #333;
+                font-weight: 600;
+                color: #000;
+                transition: background 0.3s ease, color 0.3s ease;
+                cursor: pointer; /* Change cursor to pointer */
+              }
+
+              .tag:hover {
+                color: #000; 
+                border-color: black; 
               }
               @media (max-width: 768px) {
                 .container {
