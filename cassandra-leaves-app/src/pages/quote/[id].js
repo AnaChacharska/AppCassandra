@@ -1,4 +1,5 @@
 import { useRouter } from "next/router";
+import { useEffect } from "react";
 
 export default function QuoteDetail({ leavesData }) {
     const router = useRouter();
@@ -6,23 +7,40 @@ export default function QuoteDetail({ leavesData }) {
 
     const record = leavesData.find((item) => String(item.id) === String(id));
 
+    useEffect(() => {
+        const handleScrollToTop = () => {
+            window.scrollTo({ top: 0, behavior: "smooth" });
+        };
+
+        const goTopButton = document.querySelector(".go-top-button");
+        if (goTopButton) {
+            goTopButton.addEventListener("click", handleScrollToTop);
+        }
+
+        return () => {
+            if (goTopButton) {
+                goTopButton.removeEventListener("click", handleScrollToTop);
+            }
+        };
+    }, []);
+
     if (!record) {
         return (
             <div className="container">
+                <div className="back-button" onClick={() => router.push("/")}>
+                    <img src="/left-chevron_8213511.png" alt="Home" className="home-icon" />
+                </div>
                 <h1 className="title">Record Not Found</h1>
                 <p>The record with ID {id} does not exist.</p>
-                <button
-                    className="button"
-                    onClick={() => router.push("/")}
-                >
-                    Back to Dashboard
-                </button>
             </div>
         );
     }
 
     return (
         <div className="container">
+            <div className="back-button" onClick={() => router.push("/")}>
+                <img src="/left-chevron_8213511.png" alt="Home" className="home-icon" />
+            </div>
             <h1 className="title">{record.title}</h1>
             <h2>{record.domain_name}</h2>
             <div className="details">
@@ -30,10 +48,11 @@ export default function QuoteDetail({ leavesData }) {
                     <img src={record.preview_picture} alt="Preview" className="preview" />
                 </p>
                 <div dangerouslySetInnerHTML={{ __html: record.content }} className="content" />
-
-                {/* Custom Tag Cloud */}
-
-
+                <div className="tag-cloud">
+                    {record.tags.map((tag, index) => (
+                        <span key={index} className="tag">{tag}</span>
+                    ))}
+                </div>
                 <p><strong>Language:</strong> {record.language}</p>
                 <p><strong>MIME Type:</strong> {record.mimetype}</p>
                 <p><strong>HTTP Status:</strong> {record.http_status}</p>
@@ -45,23 +64,16 @@ export default function QuoteDetail({ leavesData }) {
                 <p><strong>Wallabag Updated At:</strong> {record.wallabag_updated_at}</p>
                 <p><strong>User Name:</strong> {record.user_name}</p>
                 <p><strong>User Email:</strong> {record.user_email}</p>
-                <div className="tag-cloud">
-                    {record.tags.map((tag, index) => (
-                        <span key={index} className="tag">{tag}</span>
-                    ))}
-                </div>
             </div>
-            <button
-                className="button"
-                onClick={() => router.push("/")}
-            >
-                Back to Dashboard
+            <button className="button go-top-button">
+                Go to the top of the page
             </button>
 
             <style jsx>{`
               @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@500;700&family=DM+Sans&display=swap');
 
               .container {
+                position: relative;
                 padding: 50px 150px;
                 background-size: cover;
                 color: #1b1c1d;
@@ -71,10 +83,19 @@ export default function QuoteDetail({ leavesData }) {
                 flex-direction: column;
                 background-color: #8BE4E1;
               }
+              .back-button {
+                position: absolute;
+                top: 20px;
+                left: 20px;
+                cursor: pointer;
+              }
+              .home-icon {
+                width: 40px;
+                height: 40px;
+              }
               .title {
                 font-size: 2.8rem;
                 font-weight: 700;
-                //text-align: center;
                 margin-bottom: 20px;
                 color: white;
               }
@@ -110,11 +131,11 @@ export default function QuoteDetail({ leavesData }) {
               .button:hover {
                 background: #1b1c1d;
               }
-              h2{
+              h2 {
                 color: lightslategray;
                 font-weight: 100;
               }
-              h2:hover{
+              h2:hover {
                 color: white;
                 font-weight: 300;
               }
