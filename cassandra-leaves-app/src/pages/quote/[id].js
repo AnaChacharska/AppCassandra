@@ -53,15 +53,28 @@ export default function QuoteDetail({ leavesData }) {
                         <span key={index} className="tag">{tag}</span>
                     ))}
                 </div>
-                <p><strong>Language:</strong> {record.language}</p>
-                <p><strong>MIME Type:</strong> {record.mimetype}</p>
-                <p><strong>HTTP Status:</strong> {record.http_status}</p>
-                <p><strong>Published By:</strong> {record.published_by}</p>
-                <p>
-                    <strong>Source URL:</strong> <a href={record.url} target="_blank" rel="noopener noreferrer">{record.url}</a>
-                </p>
-                <p><strong>Wallabag Created At:</strong> {record.wallabag_created_at}</p>
-                <p><strong>Wallabag Updated At:</strong> {record.wallabag_updated_at}</p>
+                <div className="info-table-container">
+                    <div className="info-row">
+                        <div className="info-label">Language</div>
+                        <div className="info-value">{record.language}</div>
+                    </div>
+                    <div className="info-row">
+                        <div className="info-label">MIME Type</div>
+                        <div className="info-value">{record.mimetype}</div>
+                    </div>
+                    <div className="info-row">
+                        <div className="info-label">HTTP Status</div>
+                        <div className="info-value">{record.http_status}</div>
+                    </div>
+                    <div className="info-row">
+                        <div className="info-label">Wallabag Created At</div>
+                        <div className="info-value">{record.wallabag_created_at}</div>
+                    </div>
+                    <div className="info-row">
+                        <div className="info-label">Wallabag Updated At</div>
+                        <div className="info-value">{record.wallabag_updated_at}</div>
+                    </div>
+                </div>
                 <div className="user-info">
                     <div className="info-item">
                         <img src="/link_6048306.png" alt="Link Icon" className="icon" />
@@ -115,7 +128,7 @@ export default function QuoteDetail({ leavesData }) {
               }
               .title {
                 margin-top: 70px; 
-                font-size: 2.5rem;
+                font-size: 4.5rem;
                 font-weight: 700;
                 color: white;
                 width: 100%; 
@@ -223,7 +236,7 @@ export default function QuoteDetail({ leavesData }) {
               {
                 .title {
                   margin-top: 30px; 
-                  font-size: 1.5rem;
+                  font-size: 2.5rem;
                 }
                 .header-container {
                   padding-left: 10px;
@@ -255,6 +268,7 @@ export default function QuoteDetail({ leavesData }) {
                 gap: 20px; 
                 place-items: center;
                 margin-top: 20px;
+                padding-bottom: 30px;
               }
               .info-item {
                 display: inline-flex;
@@ -280,6 +294,52 @@ export default function QuoteDetail({ leavesData }) {
                   gap: 15px; 
                 }
               }
+              }
+              .info-table-container {
+                display: flex;
+                flex-direction: column;
+                gap: 15px; /* Space between rows */
+                width: 100%;
+                max-width: 600px;
+                margin: 30px auto; /* Center the table horizontally */
+                font-family: 'Poppins', sans-serif;
+              }
+
+              .info-row {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 15px 20px;
+                background-color: #e8fbf8; /* Light teal background */
+                border-radius: 30px; /* Rounded corners for pill-like rows */
+                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+                font-weight: 600;
+                color: #333;
+              }
+
+              .info-row:nth-child(even) {
+                background-color: #d6f5f2; /* Slightly lighter teal for alternate rows */
+              }
+
+              .info-label {
+                color: #555;
+                font-size: 1rem;
+                font-weight: bold;
+              }
+
+              .info-value {
+                color: #000;
+                font-size: 1rem;
+              }
+
+              @media (max-width: 768px) {
+                .info-row {
+                  flex-direction: column; /* Stack label and value vertically on smaller screens */
+                  padding: 10px 15px;
+                }
+                .info-label, .info-value {
+                  text-align: center;
+                }
               }
             `}</style>
         </div>
