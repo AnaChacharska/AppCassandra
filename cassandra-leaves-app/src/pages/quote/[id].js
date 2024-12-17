@@ -62,8 +62,16 @@ export default function QuoteDetail({ leavesData }) {
                 </p>
                 <p><strong>Wallabag Created At:</strong> {record.wallabag_created_at}</p>
                 <p><strong>Wallabag Updated At:</strong> {record.wallabag_updated_at}</p>
-                <p><strong>User Name:</strong> {record.user_name}</p>
-                <p><strong>User Email:</strong> {record.user_email}</p>
+                <div className="user-info">
+                    <div className="info-item">
+                        <img src="/mail_16866791.png" alt="Mail Icon" className="icon" />
+                        <span>{record.user_email}</span>
+                    </div>
+                    <div className="info-item">
+                        <img src="/identity_16596318.png" alt="User Icon" className="icon" />
+                        <span>{record.user_name}</span>
+                    </div>
+                </div>
             </div>
             <div className="go-top-button" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}>
                 <img src="/up-chevron_8213555.png" alt="Go to top" className="top-icon" />
@@ -178,7 +186,19 @@ export default function QuoteDetail({ leavesData }) {
                 display: flex;
                 flex-wrap: wrap;
                 gap: 10px;
-                word-wrap: break-word;
+                justify-content: center; 
+                align-items: center;
+                text-align: center;
+                position: relative;
+              }
+
+              .tag-cloud::after {
+                content: ""; 
+                display: block;
+                width: 100%; 
+                height: 0.5px;
+                background-color: #ccc;
+                margin-top: 20px; 
               }
               .tag {
                 background: #e8fbf8; 
@@ -189,17 +209,14 @@ export default function QuoteDetail({ leavesData }) {
                 font-weight: 600;
                 color: #000;
                 transition: background 0.3s ease, color 0.3s ease;
-                cursor: pointer; /* Change cursor to pointer */
+                cursor: pointer; 
               }
 
               .tag:hover {
                 color: #000; 
                 border-color: black; 
               }
-              @media (max-width: 768px) {
-                .container {
-                  padding: 10px;
-                }
+              {
                 .title {
                   margin-top: 30px; 
                   font-size: 1.5rem;
@@ -229,6 +246,36 @@ export default function QuoteDetail({ leavesData }) {
                   width: 30px;
                   height: 30px;
                 }
+              .user-info {
+                display: grid; 
+                gap: 20px; 
+                place-items: center;
+                margin-top: 20px;
+              }
+              .info-item {
+                display: inline-flex;
+                align-items: center; 
+                gap: 8px;   
+              }
+
+              .icon {
+                width: 16px; 
+                height: 16px;
+                display: block; 
+                object-fit: contain; 
+              }
+
+              .info-text {
+                font-size: 14px;
+                line-height: 1.2; 
+                vertical-align: middle; 
+              }
+
+              @media (max-width: 768px) {
+                .user-info {
+                  gap: 15px; 
+                }
+              }
               }
             `}</style>
         </div>
