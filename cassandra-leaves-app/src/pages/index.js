@@ -1,16 +1,17 @@
-import Link from "next/link";
 import { useState } from "react";
+import Card from '../components/Card';
 
 export default function Home({ leavesData }) {
-    const [filteredData, setFilteredData] = useState(leavesData || []); // Default to an empty array
+    const [filteredData, setFilteredData] = useState(leavesData || []);
     const [searchQuery, setSearchQuery] = useState("");
     const [currentPage, setCurrentPage] = useState(1);
-    const itemsPerPage = 10;
+    const itemsPerPage = 9;
 
     const [formState, setFormState] = useState({ id: "", title: "", domain_name: "" });
     const [isEditing, setIsEditing] = useState(false);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [successMessage, setSuccessMessage] = useState("");
 
-    // Handle search
     const handleSearch = (query) => {
         setSearchQuery(query);
         const lowerCaseQuery = query.toLowerCase();
@@ -18,16 +19,14 @@ export default function Home({ leavesData }) {
             item.title.toLowerCase().includes(lowerCaseQuery)
         );
         setFilteredData(filtered);
-        setCurrentPage(1); // Reset to the first page on search
+        setCurrentPage(1);
     };
 
-    // Handle form input changes
     const handleInputChange = (e) => {
         const { name, value } = e.target;
         setFormState({ ...formState, [name]: value });
     };
 
-    // Add a new record
     const handleAddRecord = () => {
         if (!formState.title || !formState.domain_name) {
             alert("Please fill out all fields.");
@@ -35,19 +34,22 @@ export default function Home({ leavesData }) {
         }
 
         const newRecord = {
-            id: filteredData.length + 1, // Generate a new ID
+            id: filteredData.length + 1,
             title: formState.title,
             domain_name: formState.domain_name,
         };
 
         setFilteredData([...filteredData, newRecord]);
         setFormState({ id: "", title: "", domain_name: "" });
+        setIsModalOpen(false);
+        setSuccessMessage("Record added successfully!");
+        setTimeout(() => setSuccessMessage(""), 3000);
     };
 
-    // Edit a record
     const handleEdit = (record) => {
         setIsEditing(true);
         setFormState(record);
+        setIsModalOpen(true);
     };
 
     const handleUpdateRecord = () => {
@@ -58,85 +60,86 @@ export default function Home({ leavesData }) {
         setFilteredData(updatedData);
         setIsEditing(false);
         setFormState({ id: "", title: "", domain_name: "" });
+        setIsModalOpen(false);
+        setSuccessMessage("Record updated successfully!");
+        setTimeout(() => setSuccessMessage(""), 3000);
     };
 
-    // Delete a record
     const handleDelete = (id) => {
         const updatedData = filteredData.filter((item) => item.id !== id);
         setFilteredData(updatedData);
         alert("Record deleted successfully.");
     };
 
-    // Pagination logic
     const totalPages = Math.ceil((filteredData?.length || 0) / itemsPerPage);
     const startIndex = (currentPage - 1) * itemsPerPage;
     const paginatedData = filteredData.slice(startIndex, startIndex + itemsPerPage);
 
     return (
-        <div className="container">
+        <div className="container" style={{ backgroundColor: isEditing ? "#8BE4E1" : "#8BE4E1" }}>
             <h1 className="title">Cassandra Leaves Dashboard</h1>
 
-            {/* Search Bar */}
-            <input
-                type="text"
-                placeholder="Search by title..."
-                value={searchQuery}
-                onChange={(e) => handleSearch(e.target.value)}
-                className="search-bar"
-            />
+            {/* Success Message */}
+            {successMessage && <div className="success-message">{successMessage}</div>}
 
-            {/* Form */}
-            <div className="form">
+            {/* Search Bar */}
+            <div className="search-bar-container">
                 <input
                     type="text"
-                    name="title"
-                    placeholder="Title"
-                    value={formState.title}
-                    onChange={handleInputChange}
+                    placeholder="Search by title..."
+                    value={searchQuery}
+                    onChange={(e) => handleSearch(e.target.value)}
+                    className="search-bar"
                 />
-                <input
-                    type="text"
-                    name="domain_name"
-                    placeholder="Domain"
-                    value={formState.domain_name}
-                    onChange={handleInputChange}
-                />
-                {isEditing ? (
-                    <button onClick={handleUpdateRecord}>Update Record</button>
-                ) : (
-                    <button onClick={handleAddRecord}>Add Record</button>
-                )}
             </div>
 
-            {/* Table */}
-            <table>
-                <thead>
-                <tr>
-                    <th>ID</th>
-                    <th>Title</th>
-                    <th>Domain</th>
-                    <th>Actions</th>
-                </tr>
-                </thead>
-                <tbody>
-                {paginatedData.map((item) => (
-                    <tr key={item.id}>
-                        <td>{item.id}</td>
-                        <td dangerouslySetInnerHTML={{ __html: item.title }}></td>
-                        <td>{item.domain_name}</td>
-                        <td>
-                            <button onClick={() => handleEdit(item)}>Edit</button>
-                            <button onClick={() => handleDelete(item.id)}>Delete</button>
-                            <Link href={`/quote/${item.id}`}>
-                                <button>View</button>
-                            </Link>
-                        </td>
-                    </tr>
-                ))}
-                </tbody>
-            </table>
+            {}
+            <button className="add-button" onClick={() => { setIsEditing(false); setIsModalOpen(true); }}>
+                Add Record
+            </button>
 
-            {/* Pagination */}
+            {/* Modal for Adding or Editing Record */}
+            {isModalOpen && (
+                <div className="modal">
+                    <div className="modal-content">
+                        <h2>{isEditing ? "Edit Record" : "Add New Record"}</h2>
+                        <input
+                            type="text"
+                            name="title"
+                            placeholder="Title"
+                            value={formState.title}
+                            onChange={handleInputChange}
+                        />
+                        <input
+                            type="text"
+                            name="domain_name"
+                            placeholder="Domain"
+                            value={formState.domain_name}
+                            onChange={handleInputChange}
+                        />
+                        <div className="modal-actions">
+                            {isEditing ? (
+                                <button onClick={handleUpdateRecord}>Update</button>
+                            ) : (
+                                <button onClick={handleAddRecord}>Add</button>
+                            )}
+                            <button onClick={() => setIsModalOpen(false)}>Cancel</button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            <div className="grid">
+                {paginatedData.map((item) => (
+                    <Card
+                        key={item.id}
+                        item={item}
+                        onEdit={handleEdit} // Use this when clicking the writing icon
+                        onDelete={handleDelete}
+                    />
+                ))}
+            </div>
+
             <div className="pagination">
                 <button
                     onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
@@ -145,8 +148,8 @@ export default function Home({ leavesData }) {
                     Previous
                 </button>
                 <span>
-          Page {currentPage} of {totalPages}
-        </span>
+                    Page {currentPage} of {totalPages}
+                </span>
                 <button
                     onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
                     disabled={currentPage === totalPages}
@@ -157,127 +160,127 @@ export default function Home({ leavesData }) {
 
             <style jsx>{`
               @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@500;700&family=DM+Sans&display=swap');
-
               .container {
                 padding: 40px;
-                background: url('Screenshot 2024-12-13 124659.png') no-repeat center center;
-                background-size: cover;
-                color: #1b1c1d;
                 font-family: 'Poppins', sans-serif;
-                min-height: 100vh;
-                display: flex;
-                flex-direction: column;
+                color: white;
               }
               .title {
                 font-size: 2.8rem;
                 font-weight: 700;
                 text-align: center;
                 margin-bottom: 20px;
-                color: #1b1c1d;
+              }
+              .search-bar-container {
+                text-align: center;
+                margin-bottom: 20px;
               }
               .search-bar {
-                margin-bottom: 20px;
                 padding: 12px;
-                width: 100%;
+                width: 60%;
+                max-width: 500px;
                 font-size: 1rem;
                 border: 1px solid #d0d4d8;
                 border-radius: 5px;
-                color: #848d97;
+                margin: 0 auto;
+                background-color: white;
+                color: #239591;
               }
-              .form {
-                margin-bottom: 20px;
-                display: flex;
-                gap: 15px;
-                justify-content: center;
-              }
-              .form input {
-                padding: 12px;
-                font-size: 1rem;
-                border: 1px solid #d0d4d8;
-                border-radius: 5px;
-                width: 200px;
-                color: #848d97;
-              }
-              .form button {
-                padding: 12px 40px;
-                font-size: 1rem;
+              .add-button {
+                display: block;
+                margin: 20px auto;
+                padding: 12px 20px;
                 color: white;
-                background: #848d97;
+                background: #239591;
                 border-radius: 5px;
                 cursor: pointer;
                 transition: 0.3s ease;
               }
-              .form button:hover {
-                background: #1b1c1d;
-              }
-              table {
-                width: 100%;
+              .grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+                gap: 20px;
                 margin-top: 20px;
-                border-collapse: collapse;
-                border: 1px solid #d0d4d8;
-                border-radius: 5px;
-                overflow: hidden;
-                background-color: rgba(255, 255, 255, 0.6);
-              }
-              th,
-              td {
-                padding: 15px;
-                text-align: left;
-                border-bottom: 1px solid #d0d4d8;
-              }
-              th {
-                background-color: #e0e3e6;
-                font-weight: 500;
-              }
-              tr:nth-child(even) {
-                background: #f9f9f9;
-              }
-              tr:hover {
-                background: #e0e3e6;
               }
               .pagination {
-                margin-top: 20px;
                 display: flex;
                 justify-content: center;
                 gap: 15px;
+                margin-top: 20px;
+                flex-wrap: wrap;
               }
               .pagination button {
                 padding: 12px 20px;
-                font-size: 1rem;
                 color: white;
-                background: #848d97;
+                background: #239591;
                 border-radius: 5px;
                 cursor: pointer;
-                transition: 0.3s ease;
               }
-              .pagination button:hover {
-                background: #1b1c1d;
+              .modal {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0, 0, 0, 0.6);
+                display: flex;
+                justify-content: center;
+                align-items: center;
               }
-              .quoted-content {
+              .modal-content {
+                background: white;
+                padding: 20px;
+                border-radius: 8px;
+                width: 90%;
+                max-width: 400px;
+                text-align: center;
+              }
+              .modal-content h2 {
                 margin-bottom: 20px;
-                background-color: rgba(255, 255, 255, 0.6);
-                padding: 40px;
-                border-radius: 10px;
-                color: #1b1c1d;
               }
-              .quoted-content h2 {
-                margin-bottom: 10px;
-              }
-              .quoted-content button {
-                margin-top: 10px;
-                padding: 10px 15px;
-                background: #848d97;
-                border: none;
-                color: white;
+              .modal-content input {
+                padding: 12px;
+                border: 1px solid #d0d4d8;
                 border-radius: 5px;
+                width: 100%;
+                margin-bottom: 15px;
+              }
+              .modal-actions {
+                display: flex;
+                gap: 10px;
+                justify-content: center;
+              }
+              .modal-actions button {
+                padding: 10px 20px;
+                border-radius: 5px;
+                color: white;
+                background: #239591;
                 cursor: pointer;
+              }
+              .success-message {
+                background-color: #d4edda;
+                color: #155724;
+                padding: 10px;
+                margin-bottom: 20px;
+                text-align: center;
+                border: 1px solid #c3e6cb;
+                border-radius: 5px;
+              }
+              @media (max-width: 600px) {
+                .pagination {
+                  flex-direction: column;
+                  align-items: center;
+                }
+                .pagination button {
+                  width: 100%;
+                  max-width: none;
+                }
               }
             `}</style>
         </div>
     );
 }
 
-// Load data from the JSON file
 export async function getStaticProps() {
     const leavesData = require("../data/leaves.json");
     return {

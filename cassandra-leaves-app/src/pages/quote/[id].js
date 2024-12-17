@@ -4,7 +4,6 @@ export default function QuoteDetail({ leavesData }) {
     const router = useRouter();
     const { id } = router.query;
 
-    // Find the record matching the ID
     const record = leavesData.find((item) => String(item.id) === String(id));
 
     if (!record) {
@@ -114,7 +113,6 @@ export default function QuoteDetail({ leavesData }) {
     );
 }
 
-// Load data for the page
 export async function getStaticProps() {
     const leavesData = require("../../data/leaves.json");
     return {
@@ -124,7 +122,6 @@ export async function getStaticProps() {
     };
 }
 
-// Generate paths for all quotes
 export async function getStaticPaths() {
     const leavesData = require("../../data/leaves.json");
 
