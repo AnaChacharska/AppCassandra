@@ -12,13 +12,13 @@ const Card = ({ item, onEdit, onDelete }) => {
             </div>
             <div className="actions">
                 <img
-                    src="/writing_2643093.png"
+                    src="/tool_16453509.png"
                     alt="Edit"
                     className="action-icon"
                     onClick={() => onEdit(item)}
                 />
                 <img
-                    src="/trash_2057606.png"
+                    src="/trash-can_11030353.png"
                     alt="Delete"
                     className="action-icon"
                     onClick={() => onDelete(item.id)}

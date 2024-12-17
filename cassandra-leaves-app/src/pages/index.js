@@ -98,7 +98,6 @@ export default function Home({ leavesData }) {
                 Add Record
             </button>
 
-            {/* Modal for Adding or Editing Record */}
             {isModalOpen && (
                 <div className="modal">
                     <div className="modal-content">

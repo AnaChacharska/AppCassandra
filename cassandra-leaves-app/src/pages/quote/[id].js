@@ -23,12 +23,16 @@ export default function QuoteDetail({ leavesData }) {
 
     return (
         <div className="container">
-            <h1 className="title">Record Details</h1>
+            <h1 className="title">{record.title}</h1>
+            <h2>{record.domain_name}</h2>
             <div className="details">
-                <p><strong>ID:</strong> {record.id}</p>
-                <p><strong>Title:</strong> {record.title}</p>
-                <p><strong>Domain:</strong> {record.domain_name}</p>
-                <p><strong>Content:</strong></p>
+                {/*<p><strong>ID:</strong> {record.id}</p>*/}
+                {/*<p><strong>Title:</strong> {record.title}</p>*/}
+                {/*<p><strong>Domain:</strong> {record.domain_name}</p>*/}
+                <p>
+                    <img src={record.preview_picture} alt="Preview" className="preview" />
+                </p>
+                {/*<p><strong>Content:</strong></p>*/}
                 <div dangerouslySetInnerHTML={{ __html: record.content }} className="content" />
                 <p><strong>Tags:</strong> {record.tags.join(", ")}</p>
                 <p><strong>Language:</strong> {record.language}</p>
@@ -38,11 +42,7 @@ export default function QuoteDetail({ leavesData }) {
                 <p>
                     <strong>Source URL:</strong> <a href={record.url} target="_blank" rel="noopener noreferrer">{record.url}</a>
                 </p>
-                <p>
-                    <strong>Preview Picture:</strong>
-                    <br />
-                    <img src={record.preview_picture} alt="Preview" className="preview" />
-                </p>
+
                 <p><strong>Wallabag Created At:</strong> {record.wallabag_created_at}</p>
                 <p><strong>Wallabag Updated At:</strong> {record.wallabag_updated_at}</p>
                 <p><strong>User Name:</strong> {record.user_name}</p>
@@ -59,22 +59,21 @@ export default function QuoteDetail({ leavesData }) {
               @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@500;700&family=DM+Sans&display=swap');
 
               .container {
-                padding: 40px;
-                background: url('Screenshot 2024-12-13 124659.png') no-repeat center center;
+                padding: 50px 150px;
                 background-size: cover;
                 color: #1b1c1d;
                 font-family: 'Poppins', sans-serif;
                 min-height: 100vh;
                 display: flex;
                 flex-direction: column;
-                background-color: rgba(255, 255, 255, 0.8);
+                background-color: #8BE4E1;
               }
               .title {
                 font-size: 2.8rem;
                 font-weight: 700;
-                text-align: center;
+                //text-align: center;
                 margin-bottom: 20px;
-                color: #1b1c1d;
+                color: white;
               }
               .details {
                 margin-top: 20px;
@@ -85,7 +84,7 @@ export default function QuoteDetail({ leavesData }) {
               .content {
                 margin-top: 10px;
                 margin-bottom: 20px;
-                padding: 40px;
+                padding: 30px;
                 background: #f9f9f9;
                 border: 1px solid #e0e3e6;
                 border-radius: 5px;
@@ -107,6 +106,14 @@ export default function QuoteDetail({ leavesData }) {
               }
               .button:hover {
                 background: #1b1c1d;
+              }
+              h2{
+                color: lightslategray;
+                font-weight: 100;
+              }
+              h2:hover{
+                color: white;
+                font-weight: 300;
               }
             `}</style>
         </div>
