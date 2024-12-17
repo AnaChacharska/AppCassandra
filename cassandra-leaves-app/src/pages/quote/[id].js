@@ -41,12 +41,12 @@ export default function QuoteDetail({ leavesData }) {
             <div className="back-button" onClick={() => router.push("/")}>
                 <img src="/left-chevron_8213511.png" alt="Home" className="home-icon" />
             </div>
-            <h1 className="title">{record.title}</h1>
-            <h2>{record.domain_name}</h2>
+            <div className="header-container">
+                <h1 className="title">{record.title}</h1>
+                <h2>{record.domain_name}</h2>
+            </div>
             <div className="details">
-                <p>
-                    <img src={record.preview_picture} alt="Preview" className="preview" />
-                </p>
+                <img src={record.preview_picture} alt="Preview" className="preview" />
                 <div dangerouslySetInnerHTML={{ __html: record.content }} className="content" />
                 <div className="tag-cloud">
                     {record.tags.map((tag, index) => (
@@ -65,7 +65,7 @@ export default function QuoteDetail({ leavesData }) {
                 <p><strong>User Name:</strong> {record.user_name}</p>
                 <p><strong>User Email:</strong> {record.user_email}</p>
             </div>
-            <div className="go-top-button">
+            <div className="go-top-button" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}>
                 <img src="/up-chevron_8213555.png" alt="Go to top" className="top-icon" />
             </div>
 
@@ -74,7 +74,7 @@ export default function QuoteDetail({ leavesData }) {
 
               .container {
                 position: relative;
-                padding: 50px 150px;
+                padding: 20px;
                 background-size: cover;
                 color: #1b1c1d;
                 font-family: 'Poppins', sans-serif;
@@ -82,41 +82,63 @@ export default function QuoteDetail({ leavesData }) {
                 display: flex;
                 flex-direction: column;
                 background-color: #8BE4E1;
+                box-sizing: border-box;
+                align-items: center;
               }
               .back-button {
                 position: absolute;
                 top: 20px;
                 left: 20px;
                 cursor: pointer;
+                z-index: 10;
               }
               .home-icon {
                 width: 40px;
                 height: 40px;
               }
+              .header-container {
+                width: 100%;
+                max-width: 1000px; 
+                padding-left: 0; 
+              }
               .title {
-                font-size: 2.8rem;
+                margin-top: 70px; 
+                font-size: 2.5rem;
                 font-weight: 700;
-                margin-bottom: 20px;
                 color: white;
+                width: 100%; 
+                margin-bottom: 10px;
               }
               .details {
                 margin-top: 20px;
-                padding: 40px;
+                padding: 30px;
                 background-color: rgba(255, 255, 255, 0.8);
                 border-radius: 10px;
+                box-sizing: border-box;
+                word-wrap: break-word;
+                width: 100%;
+                max-width: 1000px;
+                display: flex;
+                flex-direction: column;
+                overflow: hidden;
               }
               .content {
                 margin-top: 10px;
                 margin-bottom: 20px;
-                padding: 30px;
+                padding: 20px;
                 background: #f9f9f9;
                 border: 1px solid #e0e3e6;
                 border-radius: 5px;
+                word-wrap: break-word;
+                overflow-wrap: break-word;
+                flex-grow: 1;
+                overflow-y: auto;
               }
               .preview {
                 max-width: 100%;
                 border-radius: 10px;
                 margin-top: 10px;
+                height: auto;
               }
               .go-top-button {
                 margin-top: 20px;
@@ -136,6 +158,9 @@ export default function QuoteDetail({ leavesData }) {
               h2 {
                 color: lightslategray;
                 font-weight: 100;
+                margin-bottom: 20px; 
+                width: 100%; 
+                transition: color 0.3s;
               }
               h2:hover {
                 color: white;
@@ -146,6 +171,7 @@ export default function QuoteDetail({ leavesData }) {
                 display: flex;
                 flex-wrap: wrap;
                 gap: 10px;
+                word-wrap: break-word;
               }
               .tag {
                 background: #f0f0f0;
@@ -154,6 +180,40 @@ export default function QuoteDetail({ leavesData }) {
                 font-size: 1rem;
                 font-weight: 500;
                 color: #333;
+              }
+              @media (max-width: 768px) {
+                .container {
+                  padding: 10px;
+                }
+                .title {
+                  margin-top: 30px; 
+                  font-size: 1.5rem;
+                }
+                .header-container {
+                  padding-left: 10px;
+                }
+                .details {
+                  padding: 10px;
+                  margin-top: 10px;
+                  width: 100%;
+                }
+                .content {
+                  padding: 10px;
+                  margin-top: 10px;
+                  margin-bottom: 10px;
+                }
+                .back-button {
+                  top: 10px;
+                  left: 10px;
+                }
+                .home-icon {
+                  width: 30px;
+                  height: 30px;
+                }
+                .go-top-button {
+                  width: 30px;
+                  height: 30px;
+                }
               }
             `}</style>
         </div>
