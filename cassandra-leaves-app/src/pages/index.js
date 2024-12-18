@@ -5,7 +5,7 @@ export default function Home({ leavesData }) {
     const [filteredData, setFilteredData] = useState(leavesData || []);
     const [searchQuery, setSearchQuery] = useState("");
     const [currentPage, setCurrentPage] = useState(1);
-    const [isDarkMode, setIsDarkMode] = useState(false); // New state for dark mode
+    const [isDarkMode, setIsDarkMode] = useState(false);
     const itemsPerPage = 9;
 
     const [formState, setFormState] = useState({ id: "", title: "", domain_name: "" });
@@ -77,17 +77,22 @@ export default function Home({ leavesData }) {
     const paginatedData = filteredData.slice(startIndex, startIndex + itemsPerPage);
 
     return (
-        <div className={`container ${isDarkMode ? 'dark' : ''}`} style={{ backgroundColor: isEditing ? "#8BE4E1" : "#8BE4E1" }}>
+        <div className={`container ${isDarkMode ? 'dark' : ''}`}>
             <h1 className="title">Cassandra Leaves Dashboard</h1>
 
             {/* Success Message */}
             {successMessage && <div className="success-message">{successMessage}</div>}
 
-            {/* Toggle Button */}
+            {/* Toggle Switch */}
             <div className="toggle-container">
-                <button className="toggle-button" onClick={() => setIsDarkMode(!isDarkMode)}>
-                    Toggle {isDarkMode ? "Light" : "Dark"} Mode
-                </button>
+                <label className="toggle-switch">
+                    <input
+                        type="checkbox"
+                        checked={isDarkMode}
+                        onChange={() => setIsDarkMode(!isDarkMode)}
+                    />
+                    <span className="slider"></span>
+                </label>
             </div>
 
             {/* Search Bar */}
@@ -101,7 +106,6 @@ export default function Home({ leavesData }) {
                 />
             </div>
 
-            {}
             <button className="add-button" onClick={() => { setIsEditing(false); setIsModalOpen(true); }}>
                 Add Record
             </button>
@@ -141,7 +145,7 @@ export default function Home({ leavesData }) {
                     <Card
                         key={item.id}
                         item={item}
-                        onEdit={handleEdit} // Use this when clicking the writing icon
+                        onEdit={handleEdit}
                         onDelete={handleDelete}
                     />
                 ))}
@@ -170,6 +174,12 @@ export default function Home({ leavesData }) {
               .container {
                 padding: 40px;
                 font-family: 'Poppins', sans-serif;
+                background-color: #8BE4E1;
+                color: black;
+                position: relative;
+              }
+              .dark {
+                background-color: #333;
                 color: white;
               }
               .title {
@@ -192,6 +202,11 @@ export default function Home({ leavesData }) {
                 margin: 0 auto;
                 background-color: white;
                 color: #239591;
+              }
+              .dark .search-bar {
+                background-color: #555;
+                color: white;
+                border: 1px solid #444;
               }
               .add-button {
                 display: block;
@@ -222,6 +237,9 @@ export default function Home({ leavesData }) {
                 background: #239591;
                 border-radius: 5px;
                 cursor: pointer;
+              }
+              .dark .add-button, .dark .pagination button {
+                background: #444;
               }
               .modal {
                 position: fixed;
@@ -274,28 +292,48 @@ export default function Home({ leavesData }) {
                 border-radius: 5px;
               }
               .toggle-container {
-                display: flex;
-                justify-content: center;
-                margin-bottom: 20px;
+                position: absolute;
+                top: 20px;
+                right: 20px;
               }
-              .toggle-button {
-                padding: 10px 20px;
-                border-radius: 5px;
-                color: white;
-                background: #239591;
+              .toggle-switch {
+                position: relative;
+                display: inline-block;
+                width: 60px;
+                height: 34px;
+              }
+              .toggle-switch input {
+                opacity: 0;
+                width: 0;
+                height: 0;
+              }
+              .slider {
+                position: absolute;
                 cursor: pointer;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background-color: #ccc;
+                transition: .4s;
+                border-radius: 34px;
               }
-              .dark {
-                background-color: #333;
-                color: white;
+              .slider:before {
+                position: absolute;
+                content: "";
+                height: 26px;
+                width: 26px;
+                left: 4px;
+                bottom: 4px;
+                background-color: white;
+                transition: .4s;
+                border-radius: 50%;
               }
-              .dark .search-bar {
-                background-color: #555;
-                color: white;
-                border: 1px solid #444;
+              input:checked + .slider {
+                background-color: #2196F3;
               }
-              .dark .add-button, .dark .pagination button, .dark .modal-actions button, .dark .toggle-button {
-                background: #444;
+              input:checked + .slider:before {
+                transform: translateX(26px);
               }
               @media (max-width: 600px) {
                 .pagination {
