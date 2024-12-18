@@ -53,28 +53,6 @@ export default function QuoteDetail({ leavesData }) {
                         <span key={index} className="tag">{tag}</span>
                     ))}
                 </div>
-                <div className="info-table-container">
-                    <div className="info-row">
-                        <div className="info-label">Language</div>
-                        <div className="info-value">{record.language}</div>
-                    </div>
-                    <div className="info-row">
-                        <div className="info-label">MIME Type</div>
-                        <div className="info-value">{record.mimetype}</div>
-                    </div>
-                    <div className="info-row">
-                        <div className="info-label">HTTP Status</div>
-                        <div className="info-value">{record.http_status}</div>
-                    </div>
-                    <div className="info-row">
-                        <div className="info-label">Wallabag Created At</div>
-                        <div className="info-value">{record.wallabag_created_at}</div>
-                    </div>
-                    <div className="info-row">
-                        <div className="info-label">Wallabag Updated At</div>
-                        <div className="info-value">{record.wallabag_updated_at}</div>
-                    </div>
-                </div>
                 <div className="user-info">
                     <div className="info-item">
                         <img src="/link_6048306.png" alt="Link Icon" className="icon" />
