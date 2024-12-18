@@ -5,6 +5,7 @@ export default function Home({ leavesData }) {
     const [filteredData, setFilteredData] = useState(leavesData || []);
     const [searchQuery, setSearchQuery] = useState("");
     const [currentPage, setCurrentPage] = useState(1);
+    const [isDarkMode, setIsDarkMode] = useState(false); // New state for dark mode
     const itemsPerPage = 9;
 
     const [formState, setFormState] = useState({ id: "", title: "", domain_name: "" });
@@ -76,11 +77,18 @@ export default function Home({ leavesData }) {
     const paginatedData = filteredData.slice(startIndex, startIndex + itemsPerPage);
 
     return (
-        <div className="container" style={{ backgroundColor: isEditing ? "#8BE4E1" : "#8BE4E1" }}>
+        <div className={`container ${isDarkMode ? 'dark' : ''}`} style={{ backgroundColor: isEditing ? "#8BE4E1" : "#8BE4E1" }}>
             <h1 className="title">Cassandra Leaves Dashboard</h1>
 
             {/* Success Message */}
             {successMessage && <div className="success-message">{successMessage}</div>}
+
+            {/* Toggle Button */}
+            <div className="toggle-container">
+                <button className="toggle-button" onClick={() => setIsDarkMode(!isDarkMode)}>
+                    Toggle {isDarkMode ? "Light" : "Dark"} Mode
+                </button>
+            </div>
 
             {/* Search Bar */}
             <div className="search-bar-container">
@@ -264,6 +272,30 @@ export default function Home({ leavesData }) {
                 text-align: center;
                 border: 1px solid #c3e6cb;
                 border-radius: 5px;
+              }
+              .toggle-container {
+                display: flex;
+                justify-content: center;
+                margin-bottom: 20px;
+              }
+              .toggle-button {
+                padding: 10px 20px;
+                border-radius: 5px;
+                color: white;
+                background: #239591;
+                cursor: pointer;
+              }
+              .dark {
+                background-color: #333;
+                color: white;
+              }
+              .dark .search-bar {
+                background-color: #555;
+                color: white;
+                border: 1px solid #444;
+              }
+              .dark .add-button, .dark .pagination button, .dark .modal-actions button, .dark .toggle-button {
+                background: #444;
               }
               @media (max-width: 600px) {
                 .pagination {
