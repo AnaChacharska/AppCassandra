@@ -1,4 +1,4 @@
-import { useState } from "react";
+import {useEffect, useState} from "react";
 import Card from '../components/Card';
 
 export default function Home({ leavesData }) {
@@ -12,6 +12,11 @@ export default function Home({ leavesData }) {
     const [isEditing, setIsEditing] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [successMessage, setSuccessMessage] = useState("");
+
+    useEffect(() => {
+        const savedMode = localStorage.getItem("darkMode") === "true"; // Get saved mode
+        setIsDarkMode(savedMode);
+    }, []);
 
     const handleSearch = (query) => {
         setSearchQuery(query);
@@ -80,8 +85,16 @@ export default function Home({ leavesData }) {
     const startIndex = (currentPage - 1) * itemsPerPage;
     const paginatedData = filteredData.slice(startIndex, startIndex + itemsPerPage);
 
+    const toggleDarkMode = () => {
+        setIsDarkMode((prevMode) => {
+            const newMode = !prevMode;
+            localStorage.setItem("darkMode", newMode); // Save to localStorage
+            return newMode;
+        });
+    };
+
     return (
-        <div className={`container ${isDarkMode ? 'dark' : ''}`}>
+        <div className={`container ${isDarkMode ? "dark" : ""}`}>
             <h1 className="title">Cassandra Leaves Dashboard</h1>
 
             {/* Success Message */}
@@ -93,7 +106,7 @@ export default function Home({ leavesData }) {
                     <input
                         type="checkbox"
                         checked={isDarkMode}
-                        onChange={() => setIsDarkMode(!isDarkMode)}
+                        onChange={toggleDarkMode} // Use the new function here
                     />
                     <span className="slider"></span>
                 </label>

@@ -10,6 +10,11 @@ export default function QuoteDetail({ leavesData }) {
     const record = leavesData.find((item) => String(item.id) === String(id));
 
     useEffect(() => {
+        const savedMode = localStorage.getItem("darkMode") === "true"; // Get saved mode
+        setIsDarkMode(savedMode);
+    }, []);
+
+    useEffect(() => {
         const handleScrollToTop = () => {
             window.scrollTo({ top: 0, behavior: "smooth" });
         };
@@ -38,6 +43,14 @@ export default function QuoteDetail({ leavesData }) {
         );
     }
 
+    const toggleDarkMode = () => {
+        setIsDarkMode((prevMode) => {
+            const newMode = !prevMode;
+            localStorage.setItem("darkMode", newMode); // Save to localStorage
+            return newMode;
+        });
+    };
+
     return (
         <div className={`container ${isDarkMode ? 'dark' : ''}`}>
             <div className="toggle-container">
@@ -45,7 +58,7 @@ export default function QuoteDetail({ leavesData }) {
                     <input
                         type="checkbox"
                         checked={isDarkMode}
-                        onChange={() => setIsDarkMode(!isDarkMode)}
+                        onChange={toggleDarkMode}
                     />
                     <span className="slider"></span>
                 </label>
