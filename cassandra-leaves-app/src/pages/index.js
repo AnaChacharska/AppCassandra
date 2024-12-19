@@ -247,7 +247,6 @@ export default function Home({ leavesData }) {
                 border-radius: 4px;
                 background-color: #ededed;
               }
-
               .add-button {
                 padding: 10px 20px;
                 font-size: 16px;

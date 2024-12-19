@@ -18,12 +18,10 @@ export default function QuoteDetail({ leavesData }) {
         const handleScrollToTop = () => {
             window.scrollTo({ top: 0, behavior: "smooth" });
         };
-
         const goTopButton = document.querySelector(".go-top-button");
         if (goTopButton) {
             goTopButton.addEventListener("click", handleScrollToTop);
         }
-
         return () => {
             if (goTopButton) {
                 goTopButton.removeEventListener("click", handleScrollToTop);
