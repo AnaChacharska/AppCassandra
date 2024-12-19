@@ -28,7 +28,7 @@ export default function QuoteDetail({ leavesData }) {
         return (
             <div className="container">
                 <div className="back-button" onClick={() => router.push("/")}>
-                    <img src="/left-chevron_8213511.png" alt="Home" className="home-icon" />
+                    Back
                 </div>
                 <h1 className="title">Record Not Found</h1>
                 <p>The record with ID {id} does not exist.</p>
@@ -38,10 +38,10 @@ export default function QuoteDetail({ leavesData }) {
 
     return (
         <div className="container">
-            <div className="back-button" onClick={() => router.push("/")}>
-                <img src="/left-chevron_8213511.png" alt="Home" className="home-icon" />
-            </div>
             <div className="header-container">
+                <div className="back-button" onClick={() => router.push("/")}>
+                    Back
+                </div>
                 <h1 className="title">{record.title}</h1>
                 <h2>{record.domain_name}</h2>
             </div>
@@ -89,11 +89,16 @@ export default function QuoteDetail({ leavesData }) {
                 align-items: center;
               }
               .back-button {
-                position: absolute;
-                top: 20px;
-                left: 20px;
+                position: relative;
+                display: inline-block;
+                font-size: 1.2rem;
+                font-weight: 500;
+                color: gray;
                 cursor: pointer;
-                z-index: 10;
+                margin-right: 20px;
+              }
+              .back-button:hover{
+                color: white;
               }
               .home-icon {
                 width: 40px;
@@ -108,7 +113,7 @@ export default function QuoteDetail({ leavesData }) {
                 margin-top: 70px; 
                 font-size: 4.5rem;
                 font-weight: 700;
-                color: white;
+                color: black;
                 width: 100%; 
                 margin-bottom: 10px;
               }
@@ -276,10 +281,10 @@ export default function QuoteDetail({ leavesData }) {
               .info-table-container {
                 display: flex;
                 flex-direction: column;
-                gap: 15px; /* Space between rows */
+                gap: 15px; 
                 width: 100%;
                 max-width: 600px;
-                margin: 30px auto; /* Center the table horizontally */
+                margin: 30px auto; 
                 font-family: 'Poppins', sans-serif;
               }
 
@@ -288,15 +293,15 @@ export default function QuoteDetail({ leavesData }) {
                 justify-content: space-between;
                 align-items: center;
                 padding: 15px 20px;
-                background-color: #e8fbf8; /* Light teal background */
-                border-radius: 30px; /* Rounded corners for pill-like rows */
+                background-color: #e8fbf8; 
+                border-radius: 30px; 
                 box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
                 font-weight: 600;
                 color: #333;
               }
 
               .info-row:nth-child(even) {
-                background-color: #d6f5f2; /* Slightly lighter teal for alternate rows */
+                background-color: #d6f5f2; 
               }
 
               .info-label {
@@ -312,7 +317,7 @@ export default function QuoteDetail({ leavesData }) {
 
               @media (max-width: 768px) {
                 .info-row {
-                  flex-direction: column; /* Stack label and value vertically on smaller screens */
+                  flex-direction: column; 
                   padding: 10px 15px;
                 }
                 .info-label, .info-value {
