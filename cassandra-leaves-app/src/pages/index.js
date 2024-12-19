@@ -1,4 +1,4 @@
-import {useEffect, useState} from "react";
+import { useEffect, useState } from "react";
 import Card from '../components/Card';
 
 export default function Home({ leavesData }) {
@@ -12,9 +12,11 @@ export default function Home({ leavesData }) {
     const [isEditing, setIsEditing] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [successMessage, setSuccessMessage] = useState("");
+    const [deleteRecord, setDeleteRecord] = useState(null);
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
     useEffect(() => {
-        const savedMode = localStorage.getItem("darkMode") === "true"; // Get saved mode
+        const savedMode = localStorage.getItem("darkMode") === "true";
         setIsDarkMode(savedMode);
     }, []);
 
@@ -49,7 +51,7 @@ export default function Home({ leavesData }) {
             domain_name: formState.domain_name,
         };
 
-        setFilteredData([...filteredData, newRecord]);
+        setFilteredData([newRecord, ...filteredData]);
         setFormState({ id: "", title: "", domain_name: "" });
         setIsModalOpen(false);
         setSuccessMessage("Record added successfully!");
@@ -76,9 +78,21 @@ export default function Home({ leavesData }) {
     };
 
     const handleDelete = (id) => {
-        const updatedData = filteredData.filter((item) => item.id !== id);
+        setDeleteRecord(id);
+        setIsDeleteModalOpen(true);
+    };
+
+    const confirmDelete = () => {
+        const updatedData = filteredData.filter((item) => item.id !== deleteRecord);
         setFilteredData(updatedData);
+        setDeleteRecord(null);
+        setIsDeleteModalOpen(false);
         alert("Record deleted successfully.");
+    };
+
+    const cancelDelete = () => {
+        setDeleteRecord(null);
+        setIsDeleteModalOpen(false);
     };
 
     const totalPages = Math.ceil((filteredData?.length || 0) / itemsPerPage);
@@ -88,24 +102,23 @@ export default function Home({ leavesData }) {
     const toggleDarkMode = () => {
         setIsDarkMode((prevMode) => {
             const newMode = !prevMode;
-            localStorage.setItem("darkMode", newMode); // Save to localStorage
+            localStorage.setItem("darkMode", newMode);
             return newMode;
         });
     };
+
     return (
         <div className={`container ${isDarkMode ? "dark" : ""}`}>
             <h1 className="title">Cassandra Leaves Dashboard</h1>
 
-            {/* Success Message */}
             {successMessage && <div className="success-message">{successMessage}</div>}
 
-            {/* Toggle Switch */}
             <div className="toggle-container">
                 <label className="toggle-switch">
                     <input
                         type="checkbox"
                         checked={isDarkMode}
-                        onChange={toggleDarkMode} // Use the new function here
+                        onChange={toggleDarkMode}
                     />
                     <span className="slider"></span>
                 </label>
@@ -149,6 +162,19 @@ export default function Home({ leavesData }) {
                                 <button onClick={handleAddRecord}>Add</button>
                             )}
                             <button onClick={() => setIsModalOpen(false)}>Cancel</button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {isDeleteModalOpen && (
+                <div className="modal">
+                    <div className="modal-content">
+                        <h2>Confirm Deletion</h2>
+                        <p>Are you sure you want to delete this record?</p>
+                        <div className="modal-actions">
+                            <button onClick={confirmDelete}>Yes, Delete</button>
+                            <button onClick={cancelDelete}>Cancel</button>
                         </div>
                     </div>
                 </div>
@@ -213,14 +239,13 @@ export default function Home({ leavesData }) {
                 gap: 10px;
                 margin-bottom: 20px;
               }
-
               .search-bar {
                 width: 300px; 
                 padding: 10px;
                 font-size: 16px;
                 border: 1px solid #ccc;
                 border-radius: 4px;
-                background-color: #ededed ;
+                background-color: #ededed;
               }
 
               .add-button {
@@ -237,8 +262,8 @@ export default function Home({ leavesData }) {
                 background-color: #0056b3;
               }
               .dark .search-bar {
-                background-color: #12403c;
-                color: white;
+                background-color: #19635f;
+                color: white !important;
                 border: 1px solid #444;
               }
               .grid {
@@ -247,7 +272,7 @@ export default function Home({ leavesData }) {
                 gap: 20px;
                 margin-top: 20px;
               }
-              .dark .grid{
+              .dark .grid {
                 opacity: 0.9;
               }
               .pagination {
@@ -265,7 +290,7 @@ export default function Home({ leavesData }) {
                 border: none;
                 cursor: pointer;
               }
-              .pagination button:hover{
+              .pagination button:hover {
                 background-color: #0056b3;
               }
               .dark .add-button, .dark .pagination button {
@@ -281,6 +306,10 @@ export default function Home({ leavesData }) {
                 display: flex;
                 justify-content: center;
                 align-items: center;
+              }
+              .dark .modal{
+                z-index: 10;
+                color: #1a1a1a;
               }
               .modal-content {
                 background: white;

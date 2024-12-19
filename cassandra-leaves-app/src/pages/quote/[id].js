@@ -10,7 +10,7 @@ export default function QuoteDetail({ leavesData }) {
     const record = leavesData.find((item) => String(item.id) === String(id));
 
     useEffect(() => {
-        const savedMode = localStorage.getItem("darkMode") === "true"; // Get saved mode
+        const savedMode = localStorage.getItem("darkMode") === "true";
         setIsDarkMode(savedMode);
     }, []);
 
@@ -66,7 +66,7 @@ export default function QuoteDetail({ leavesData }) {
 
             <div className="header-container">
                 <div className="back-button" onClick={() => router.push("/")}>
-                    Back
+                    <span>&lt;Back</span>
                 </div>
                 <h1 className="title">{record.title}</h1>
                 <h2>{record.domain_name}</h2>
@@ -174,6 +174,7 @@ export default function QuoteDetail({ leavesData }) {
                 color: gray;
                 cursor: pointer;
                 margin-right: 20px;
+                z-index: 10;
               }
               .back-button:hover{
                 color: white;
