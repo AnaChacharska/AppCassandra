@@ -92,7 +92,6 @@ export default function Home({ leavesData }) {
             return newMode;
         });
     };
-
     return (
         <div className={`container ${isDarkMode ? "dark" : ""}`}>
             <h1 className="title">Cassandra Leaves Dashboard</h1>
@@ -247,6 +246,9 @@ export default function Home({ leavesData }) {
                 grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
                 gap: 20px;
                 margin-top: 20px;
+              }
+              .dark .grid{
+                opacity: 0.9;
               }
               .pagination {
                 display: flex;

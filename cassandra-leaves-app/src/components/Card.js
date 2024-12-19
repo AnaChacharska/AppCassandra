@@ -1,12 +1,18 @@
+import {useDarkMode} from "../contexts/DarkModeContext";
 import Link from "next/link";
 
 const Card = ({ item, onEdit, onDelete }) => {
+    const { isDarkMode } = useDarkMode();
+
     return (
-        <div className="card">
+        <div className={`card ${isDarkMode ? "dark" : ""}`}>
             <img src={item.preview_picture} alt={item.title} className="card-image" />
             <div className="card-content">
                 <Link href={`/quote/${item.id}`}>
-                    <h2 className="card-title" dangerouslySetInnerHTML={{ __html: item.title }}></h2>
+                    <h2
+                        className="card-title"
+                        dangerouslySetInnerHTML={{ __html: item.title }}
+                    ></h2>
                 </Link>
                 <p>{item.domain_name}</p>
             </div>
@@ -31,11 +37,15 @@ const Card = ({ item, onEdit, onDelete }) => {
                 border: 1px solid #e0e3e6;
                 border-radius: 10px;
                 box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-                transition: transform 0.3s ease;
+                transition: transform 0.3s ease, background 0.3s ease;
                 display: flex;
                 flex-direction: column;
                 overflow: hidden;
                 height: 400px; 
+              }
+              .card.dark {
+                background: #333; 
+                color: #fff; 
               }
               .card:hover {
                 transform: translateY(-5px);
@@ -53,7 +63,7 @@ const Card = ({ item, onEdit, onDelete }) => {
                 flex-grow: 1;
               }
               .card-title {
-                font-size: 1.2rem; /* Consistent text size */
+                font-size: 1.2rem;
                 margin-bottom: 10px;
                 color: #333;
                 overflow: hidden;
@@ -72,6 +82,12 @@ const Card = ({ item, onEdit, onDelete }) => {
                 font-size: 1rem; 
                 color: #777;
                 margin-bottom: auto; 
+              }
+              .card.dark .card-title {
+                color: #fff; 
+              }
+              .card.dark p {
+                color: #ccc; 
               }
               .actions {
                 display: flex;
