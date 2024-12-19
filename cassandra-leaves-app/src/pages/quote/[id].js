@@ -149,20 +149,25 @@ export default function QuoteDetail({ leavesData }) {
                 height: auto;
               }
               .go-top-button {
-                position: fixed; 
-                bottom: 20px; 
-                left: 20px; 
-                width: 40px;
-                height: 40px;
+                position: fixed;
+                bottom: 20px;
+                right: 20px;
+                width: 50px;
+                height: 50px;
                 cursor: pointer;
                 z-index: 1000;
-                transition: 0.3s ease;
+                transition: transform 0.3s ease, opacity 0.3s ease;
+                opacity: 0.8;
               }
-
-              .go-top-button:hover .top-icon {
+              .go-top-button:hover{
                 transform: scale(1.1);
+                opacity: 1;
               }
-
+              .go-up-button img {
+                width: 100%;
+                height: 100%;
+                object-fit: contain;
+              }
               .top-icon {
                 width: 100%;
                 height: 100%;

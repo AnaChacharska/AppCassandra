@@ -23,6 +23,10 @@ export default function Home({ leavesData }) {
         setCurrentPage(1);
     };
 
+    const handleGoUp = () => {
+        window.scrollTo({ top: 0, behavior: "smooth" });
+    };
+
     const handleInputChange = (e) => {
         const { name, value } = e.target;
         setFormState({ ...formState, [name]: value });
@@ -167,6 +171,11 @@ export default function Home({ leavesData }) {
                 >
                     Next
                 </button>
+            </div>
+
+            {/* Go Up Button */}
+            <div className="go-up-button" onClick={handleGoUp}>
+                <img src="/up-chevron_8213555.png" alt="Go to top" />
             </div>
 
             <style jsx>{`
@@ -344,6 +353,26 @@ export default function Home({ leavesData }) {
                   width: 100%;
                   max-width: none;
                 }
+              }
+              .go-up-button {
+                position: fixed;
+                bottom: 20px;
+                right: 20px;
+                width: 50px;
+                height: 50px;
+                cursor: pointer;
+                z-index: 1000;
+                transition: transform 0.3s ease, opacity 0.3s ease;
+                opacity: 0.8;
+              }
+              .go-up-button:hover {
+                transform: scale(1.1);
+                opacity: 1;
+              }
+              .go-up-button img {
+                width: 100%;
+                height: 100%;
+                object-fit: contain;
               }
             `}</style>
         </div>
