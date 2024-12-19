@@ -171,7 +171,6 @@ export default function Home({ leavesData }) {
                 </button>
             </div>
 
-            {/* Go Up Button */}
             <div className="go-up-button" onClick={handleGoUp}>
                 <img src="/up-chevron_8213555.png" alt="Go to top" />
             </div>
@@ -186,7 +185,7 @@ export default function Home({ leavesData }) {
                 position: relative;
               }
               .dark {
-                background-color: #333;
+                background-color: #123733;
                 color: white;
               }
               .title {
@@ -199,7 +198,7 @@ export default function Home({ leavesData }) {
                 display: flex;
                 justify-content: center;
                 align-items: center;
-                gap: 10px; 
+                gap: 10px;
                 margin-bottom: 20px;
               }
 
@@ -209,7 +208,7 @@ export default function Home({ leavesData }) {
                 font-size: 16px;
                 border: 1px solid #ccc;
                 border-radius: 4px;
-                background-color: white;
+                background-color: #ededed ;
               }
 
               .add-button {
@@ -226,7 +225,7 @@ export default function Home({ leavesData }) {
                 background-color: #0056b3;
               }
               .dark .search-bar {
-                background-color: #555;
+                background-color: #12403c;
                 color: white;
                 border: 1px solid #444;
               }
@@ -255,7 +254,7 @@ export default function Home({ leavesData }) {
                 background-color: #0056b3;
               }
               .dark .add-button, .dark .pagination button {
-                background: #444;
+                background: #10211d;
               }
               .modal {
                 position: fixed;
