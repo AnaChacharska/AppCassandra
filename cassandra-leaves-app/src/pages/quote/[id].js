@@ -211,8 +211,8 @@ export default function QuoteDetail({ leavesData }) {
                 border-radius: 20px;
                 padding: 5px 15px;
                 font-size: 1rem;
-                font-weight: 600;
-                color: #000;
+                font-weight: lighter;
+                color: #4a4d51;
                 transition: background 0.3s ease, color 0.3s ease;
                 cursor: pointer; 
               }

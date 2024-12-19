@@ -99,8 +99,7 @@ export default function Home({ leavesData }) {
                 </label>
             </div>
 
-            {/* Search Bar */}
-            <div className="search-bar-container">
+            <div className="search-add-container">
                 <input
                     type="text"
                     placeholder="Search by title..."
@@ -108,11 +107,10 @@ export default function Home({ leavesData }) {
                     onChange={(e) => handleSearch(e.target.value)}
                     className="search-bar"
                 />
+                <button className="add-button" onClick={() => { setIsEditing(false); setIsModalOpen(true); }}>
+                    Add Record
+                </button>
             </div>
-
-            <button className="add-button" onClick={() => { setIsEditing(false); setIsModalOpen(true); }}>
-                Add Record
-            </button>
 
             {isModalOpen && (
                 <div className="modal">
@@ -197,35 +195,40 @@ export default function Home({ leavesData }) {
                 text-align: center;
                 margin-bottom: 20px;
               }
-              .search-bar-container {
-                text-align: center;
+              .search-add-container {
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                gap: 10px; /* Space between the search bar and button */
                 margin-bottom: 20px;
               }
+
               .search-bar {
-                padding: 12px;
-                width: 60%;
-                max-width: 500px;
-                font-size: 1rem;
-                border: 1px solid #d0d4d8;
-                border-radius: 5px;
-                margin: 0 auto;
+                width: 300px; /* Smaller width for the search bar */
+                padding: 10px;
+                font-size: 16px;
+                border: 1px solid #ccc;
+                border-radius: 4px;
                 background-color: white;
-                color: #239591;
+              }
+
+              .add-button {
+                padding: 10px 20px;
+                font-size: 16px;
+                background: #239591;
+                color: white;
+                border: none;
+                border-radius: 5px;
+                cursor: pointer;
+                transition: background-color 0.3s;
+              }
+              .add-button:hover {
+                background-color: #0056b3;
               }
               .dark .search-bar {
                 background-color: #555;
                 color: white;
                 border: 1px solid #444;
-              }
-              .add-button {
-                display: block;
-                margin: 20px auto;
-                padding: 12px 20px;
-                color: white;
-                background: #239591;
-                border-radius: 5px;
-                cursor: pointer;
-                transition: 0.3s ease;
               }
               .grid {
                 display: grid;
@@ -245,7 +248,11 @@ export default function Home({ leavesData }) {
                 color: white;
                 background: #239591;
                 border-radius: 5px;
+                border: none;
                 cursor: pointer;
+              }
+              .pagination button:hover{
+                background-color: #0056b3;
               }
               .dark .add-button, .dark .pagination button {
                 background: #444;
