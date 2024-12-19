@@ -199,12 +199,12 @@ export default function Home({ leavesData }) {
                 display: flex;
                 justify-content: center;
                 align-items: center;
-                gap: 10px; /* Space between the search bar and button */
+                gap: 10px; 
                 margin-bottom: 20px;
               }
 
               .search-bar {
-                width: 300px; /* Smaller width for the search bar */
+                width: 300px; 
                 padding: 10px;
                 font-size: 16px;
                 border: 1px solid #ccc;
