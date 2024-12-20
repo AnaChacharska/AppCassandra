@@ -6,15 +6,17 @@ export default function Home({ leavesData }) {
     const [filteredData, setFilteredData] = useState(leavesData || []);
     const [searchQuery, setSearchQuery] = useState("");
     const [currentPage, setCurrentPage] = useState(1);
-    const [isDarkMode, setIsDarkMode] = useState(false);
     const itemsPerPage = 9;
+    const [isDarkMode, setIsDarkMode] = useState(false);
 
     const [formState, setFormState] = useState({ id: "", title: "", domain_name: "" });
-    const [isEditing, setIsEditing] = useState(false);
-    const [isModalOpen, setIsModalOpen] = useState(false);
-    const [successMessage, setSuccessMessage] = useState("");
-    const [deleteRecord, setDeleteRecord] = useState(null);
-    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+    const [modalState, setModalState] = useState({
+        isEditing: false,
+        isModalOpen: false,
+        successMessage: "",
+        deleteRecord: null,
+        isDeleteModalOpen: false,
+    });
 
     useEffect(() => {
         const savedMode = localStorage.getItem("darkMode") === "true";
@@ -54,15 +56,17 @@ export default function Home({ leavesData }) {
 
         setFilteredData([newRecord, ...filteredData]);
         setFormState({ id: "", title: "", domain_name: "" });
-        setIsModalOpen(false);
-        setSuccessMessage("Record added successfully!");
-        setTimeout(() => setSuccessMessage(""), 3000);
+        setModalState({
+            ...modalState,
+            isModalOpen: false,
+            successMessage: "Record added successfully!",
+        });
+        setTimeout(() => setModalState({ ...modalState, successMessage: "" }), 3000);
     };
 
     const handleEdit = (record) => {
-        setIsEditing(true);
         setFormState(record);
-        setIsModalOpen(true);
+        setModalState({ ...modalState, isEditing: true, isModalOpen: true });
     };
 
     const handleUpdateRecord = () => {
@@ -71,29 +75,33 @@ export default function Home({ leavesData }) {
         );
 
         setFilteredData(updatedData);
-        setIsEditing(false);
         setFormState({ id: "", title: "", domain_name: "" });
-        setIsModalOpen(false);
-        setSuccessMessage("Record updated successfully!");
-        setTimeout(() => setSuccessMessage(""), 3000);
+        setModalState({
+            ...modalState,
+            isEditing: false,
+            isModalOpen: false,
+            successMessage: "Record updated successfully!",
+        });
+        setTimeout(() => setModalState({ ...modalState, successMessage: "" }), 3000);
     };
 
     const handleDelete = (id) => {
-        setDeleteRecord(id);
-        setIsDeleteModalOpen(true);
+        setModalState({ ...modalState, deleteRecord: id, isDeleteModalOpen: true });
     };
 
     const confirmDelete = () => {
-        const updatedData = filteredData.filter((item) => item.id !== deleteRecord);
+        const updatedData = filteredData.filter((item) => item.id !== modalState.deleteRecord);
         setFilteredData(updatedData);
-        setDeleteRecord(null);
-        setIsDeleteModalOpen(false);
+        setModalState({
+            ...modalState,
+            deleteRecord: null,
+            isDeleteModalOpen: false,
+        });
         alert("Record deleted successfully.");
     };
 
     const cancelDelete = () => {
-        setDeleteRecord(null);
-        setIsDeleteModalOpen(false);
+        setModalState({ ...modalState, deleteRecord: null, isDeleteModalOpen: false });
     };
 
     const totalPages = Math.ceil((filteredData?.length || 0) / itemsPerPage);
@@ -112,7 +120,9 @@ export default function Home({ leavesData }) {
         <div className={`${styles.container} ${isDarkMode ? styles.dark : ""}`}>
             <h1 className={styles.title}>Cassandra Leaves Dashboard</h1>
 
-            {successMessage && <div className={styles.successMessage}>{successMessage}</div>}
+            {modalState.successMessage && (
+                <div className={styles.successMessage}>{modalState.successMessage}</div>
+            )}
 
             <div className={styles.toggleContainer}>
                 <label className={styles.toggleSwitch}>
@@ -133,18 +143,15 @@ export default function Home({ leavesData }) {
                     onChange={(e) => handleSearch(e.target.value)}
                     className={styles.searchBar}
                 />
-                <button
-                    className={styles.addButton}
-                    onClick={() => { setIsEditing(false); setIsModalOpen(true); }}
-                >
+                <button className={styles.addButton} onClick={() => setModalState({ ...modalState, isEditing: false, isModalOpen: true })}>
                     Add Record
                 </button>
             </div>
 
-            {isModalOpen && (
+            {modalState.isModalOpen && (
                 <div className={styles.modal}>
                     <div className={styles.modalContent}>
-                        <h2>{isEditing ? "Edit Record" : "Add New Record"}</h2>
+                        <h2>{modalState.isEditing ? "Edit Record" : "Add New Record"}</h2>
                         <input
                             type="text"
                             name="title"
@@ -160,18 +167,18 @@ export default function Home({ leavesData }) {
                             onChange={handleInputChange}
                         />
                         <div className={styles.modalActions}>
-                            {isEditing ? (
+                            {modalState.isEditing ? (
                                 <button onClick={handleUpdateRecord}>Update</button>
                             ) : (
                                 <button onClick={handleAddRecord}>Add</button>
                             )}
-                            <button onClick={() => setIsModalOpen(false)}>Cancel</button>
+                            <button onClick={() => setModalState({ ...modalState, isModalOpen: false })}>Cancel</button>
                         </div>
                     </div>
                 </div>
             )}
 
-            {isDeleteModalOpen && (
+            {modalState.isDeleteModalOpen && (
                 <div className={styles.modal}>
                     <div className={styles.modalContent}>
                         <h2>Confirm Deletion</h2>
