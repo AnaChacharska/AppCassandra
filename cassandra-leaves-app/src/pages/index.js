@@ -1,283 +1,307 @@
-import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import Card from "../components/Card";
+import styles from "./Home.module.css";
 
 export default function Home({ leavesData }) {
-    const [filteredData, setFilteredData] = useState(leavesData || []); // Default to an empty array
-    const [searchQuery, setSearchQuery] = useState("");
-    const [currentPage, setCurrentPage] = useState(1);
-    const itemsPerPage = 10;
+    const [dataState, setDataState] = useState({
+        formState: { id: "", title: "", domain_name: "" },
+    });
 
-    const [formState, setFormState] = useState({ id: "", title: "", domain_name: "" });
-    const [isEditing, setIsEditing] = useState(false);
+    const [uiState, setUiState] = useState({
+        searchQuery: "",
+        currentPage: 1,
+        isDarkMode: false,
+        modalState: {
+            isEditing: false,
+            isModalOpen: false,
+            successMessage: "",
+            deleteRecord: null,
+            isDeleteModalOpen: false,
+        },
+    });
 
-    // Handle search
-    const handleSearch = (query) => {
-        setSearchQuery(query);
-        const lowerCaseQuery = query.toLowerCase();
-        const filtered = leavesData.filter((item) =>
+    const itemsPerPage = 9;
+
+    useEffect(() => {
+        const savedMode = localStorage.getItem("darkMode") === "true";
+        setUiState((prevState) => ({ ...prevState, isDarkMode: savedMode }));
+    }, []);
+
+    // Use useMemo to derive filteredData
+    const filteredData = useMemo(() => {
+        const lowerCaseQuery = uiState.searchQuery.toLowerCase();
+        return leavesData?.filter((item) =>
             item.title.toLowerCase().includes(lowerCaseQuery)
-        );
-        setFilteredData(filtered);
-        setCurrentPage(1); // Reset to the first page on search
+        ) || [];
+    }, [leavesData, uiState.searchQuery]);
+
+    const handleSearch = (query) => {
+        setUiState((prevState) => ({
+            ...prevState,
+            searchQuery: query,
+            currentPage: 1,
+        }));
     };
 
-    // Handle form input changes
+    const handleGoUp = () => {
+        window.scrollTo({ top: 0, behavior: "smooth" });
+    };
+
     const handleInputChange = (e) => {
         const { name, value } = e.target;
-        setFormState({ ...formState, [name]: value });
+        setDataState((prevState) => ({
+            ...prevState,
+            formState: { ...prevState.formState, [name]: value },
+        }));
     };
 
-    // Add a new record
     const handleAddRecord = () => {
-        if (!formState.title || !formState.domain_name) {
+        if (!dataState.formState.title || !dataState.formState.domain_name) {
             alert("Please fill out all fields.");
             return;
         }
 
         const newRecord = {
-            id: filteredData.length + 1, // Generate a new ID
-            title: formState.title,
-            domain_name: formState.domain_name,
+            id: filteredData.length + 1,
+            title: dataState.formState.title,
+            domain_name: dataState.formState.domain_name,
         };
 
-        setFilteredData([...filteredData, newRecord]);
-        setFormState({ id: "", title: "", domain_name: "" });
+        leavesData.unshift(newRecord); // Add the new record to the original data
+        setDataState((prevState) => ({
+            ...prevState,
+            formState: { id: "", title: "", domain_name: "" },
+        }));
+        setUiState((prevState) => ({
+            ...prevState,
+            modalState: {
+                ...prevState.modalState,
+                isModalOpen: false,
+                successMessage: "Record added successfully!",
+            },
+        }));
+        setTimeout(() =>
+                setUiState((prevState) => ({
+                    ...prevState,
+                    modalState: { ...prevState.modalState, successMessage: "" },
+                }))
+            , 3000);
     };
 
-    // Edit a record
     const handleEdit = (record) => {
-        setIsEditing(true);
-        setFormState(record);
+        setDataState((prevState) => ({ ...prevState, formState: record }));
+        setUiState((prevState) => ({
+            ...prevState,
+            modalState: { ...prevState.modalState, isEditing: true, isModalOpen: true },
+        }));
     };
 
     const handleUpdateRecord = () => {
-        const updatedData = filteredData.map((item) =>
-            item.id === formState.id ? formState : item
-        );
+        const index = leavesData.findIndex((item) => item.id === dataState.formState.id);
+        if (index !== -1) leavesData[index] = dataState.formState;
 
-        setFilteredData(updatedData);
-        setIsEditing(false);
-        setFormState({ id: "", title: "", domain_name: "" });
+        setDataState((prevState) => ({
+            ...prevState,
+            formState: { id: "", title: "", domain_name: "" },
+        }));
+        setUiState((prevState) => ({
+            ...prevState,
+            modalState: {
+                ...prevState.modalState,
+                isEditing: false,
+                isModalOpen: false,
+                successMessage: "Record updated successfully!",
+            },
+        }));
+        setTimeout(() =>
+                setUiState((prevState) => ({
+                    ...prevState,
+                    modalState: { ...prevState.modalState, successMessage: "" },
+                }))
+            , 3000);
     };
 
-    // Delete a record
     const handleDelete = (id) => {
-        const updatedData = filteredData.filter((item) => item.id !== id);
-        setFilteredData(updatedData);
+        setUiState((prevState) => ({
+            ...prevState,
+            modalState: { ...prevState.modalState, deleteRecord: id, isDeleteModalOpen: true },
+        }));
+    };
+
+    const confirmDelete = () => {
+        const index = leavesData.findIndex((item) => item.id === uiState.modalState.deleteRecord);
+        if (index !== -1) leavesData.splice(index, 1);
+
+        setUiState((prevState) => ({
+            ...prevState,
+            modalState: { ...prevState.modalState, deleteRecord: null, isDeleteModalOpen: false },
+        }));
         alert("Record deleted successfully.");
     };
 
-    // Pagination logic
-    const totalPages = Math.ceil((filteredData?.length || 0) / itemsPerPage);
-    const startIndex = (currentPage - 1) * itemsPerPage;
+    const cancelDelete = () => {
+        setUiState((prevState) => ({
+            ...prevState,
+            modalState: { ...prevState.modalState, deleteRecord: null, isDeleteModalOpen: false },
+        }));
+    };
+
+    const totalPages = Math.ceil(filteredData.length / itemsPerPage);
+    const startIndex = (uiState.currentPage - 1) * itemsPerPage;
     const paginatedData = filteredData.slice(startIndex, startIndex + itemsPerPage);
 
+    const toggleDarkMode = () => {
+        setUiState((prevState) => {
+            const newMode = !prevState.isDarkMode;
+            localStorage.setItem("darkMode", newMode);
+            return { ...prevState, isDarkMode: newMode };
+        });
+    };
+
     return (
-        <div className="container">
-            <h1 className="title">Cassandra Leaves Dashboard</h1>
+        <div className={`${styles.container} ${uiState.isDarkMode ? styles.dark : ""}`}>
+            <h1 className={styles.title}>Cassandra Leaves Dashboard</h1>
 
-            {/* Search Bar */}
-            <input
-                type="text"
-                placeholder="Search by title..."
-                value={searchQuery}
-                onChange={(e) => handleSearch(e.target.value)}
-                className="search-bar"
-            />
+            {uiState.modalState.successMessage && (
+                <div className={styles.successMessage}>{uiState.modalState.successMessage}</div>
+            )}
 
-            {/* Form */}
-            <div className="form">
-                <input
-                    type="text"
-                    name="title"
-                    placeholder="Title"
-                    value={formState.title}
-                    onChange={handleInputChange}
-                />
-                <input
-                    type="text"
-                    name="domain_name"
-                    placeholder="Domain"
-                    value={formState.domain_name}
-                    onChange={handleInputChange}
-                />
-                {isEditing ? (
-                    <button onClick={handleUpdateRecord}>Update Record</button>
-                ) : (
-                    <button onClick={handleAddRecord}>Add Record</button>
-                )}
+            <div className={styles.toggleContainer}>
+                <label className={styles.toggleSwitch}>
+                    <input
+                        type="checkbox"
+                        checked={uiState.isDarkMode}
+                        onChange={toggleDarkMode}
+                    />
+                    <span className={styles.slider}></span>
+                </label>
             </div>
 
-            {/* Table */}
-            <table>
-                <thead>
-                <tr>
-                    <th>ID</th>
-                    <th>Title</th>
-                    <th>Domain</th>
-                    <th>Actions</th>
-                </tr>
-                </thead>
-                <tbody>
+            <div className={styles.searchAddContainer}>
+                <input
+                    type="text"
+                    placeholder="Search by title..."
+                    value={uiState.searchQuery}
+                    onChange={(e) => handleSearch(e.target.value)}
+                    className={styles.searchBar}
+                />
+                <button
+                    className={styles.addButton}
+                    onClick={() =>
+                        setUiState((prevState) => ({
+                            ...prevState,
+                            modalState: { ...prevState.modalState, isEditing: false, isModalOpen: true },
+                        }))
+                    }
+                >
+                    Add Record
+                </button>
+            </div>
+
+            {/* Modal for Add/Edit */}
+            {uiState.modalState.isModalOpen && (
+                <div className={styles.modal}>
+                    <div className={styles.modalContent}>
+                        <h2>{uiState.modalState.isEditing ? "Edit Record" : "Add New Record"}</h2>
+                        <input
+                            type="text"
+                            name="title"
+                            placeholder="Title"
+                            value={dataState.formState.title}
+                            onChange={handleInputChange}
+                        />
+                        <input
+                            type="text"
+                            name="domain_name"
+                            placeholder="Domain"
+                            value={dataState.formState.domain_name}
+                            onChange={handleInputChange}
+                        />
+                        <div className={styles.modalActions}>
+                            {uiState.modalState.isEditing ? (
+                                <button onClick={handleUpdateRecord}>Update</button>
+                            ) : (
+                                <button onClick={handleAddRecord}>Add</button>
+                            )}
+                            <button
+                                onClick={() =>
+                                    setUiState((prevState) => ({
+                                        ...prevState,
+                                        modalState: { ...prevState.modalState, isModalOpen: false },
+                                    }))
+                                }
+                            >
+                                Cancel
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Modal for Delete Confirmation */}
+            {uiState.modalState.isDeleteModalOpen && (
+                <div className={styles.modal}>
+                    <div className={styles.modalContent}>
+                        <h2>Confirm Deletion</h2>
+                        <p>Are you sure you want to delete this record?</p>
+                        <div className={styles.modalActions}>
+                            <button onClick={confirmDelete}>Yes, Delete</button>
+                            <button onClick={cancelDelete}>Cancel</button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Display Data */}
+            <div className={styles.grid}>
                 {paginatedData.map((item) => (
-                    <tr key={item.id}>
-                        <td>{item.id}</td>
-                        <td dangerouslySetInnerHTML={{ __html: item.title }}></td>
-                        <td>{item.domain_name}</td>
-                        <td>
-                            <button onClick={() => handleEdit(item)}>Edit</button>
-                            <button onClick={() => handleDelete(item.id)}>Delete</button>
-                            <Link href={`/quote/${item.id}`}>
-                                <button>View</button>
-                            </Link>
-                        </td>
-                    </tr>
+                    <Card
+                        key={item.id}
+                        item={item}
+                        onEdit={handleEdit}
+                        onDelete={handleDelete}
+                    />
                 ))}
-                </tbody>
-            </table>
+            </div>
 
             {/* Pagination */}
-            <div className="pagination">
+            <div className={styles.pagination}>
                 <button
-                    onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-                    disabled={currentPage === 1}
+                    onClick={() =>
+                        setUiState((prevState) => ({
+                            ...prevState,
+                            currentPage: Math.max(prevState.currentPage - 1, 1),
+                        }))
+                    }
+                    disabled={uiState.currentPage === 1}
                 >
                     Previous
                 </button>
                 <span>
-          Page {currentPage} of {totalPages}
-        </span>
+                    Page {uiState.currentPage} of {totalPages}
+                </span>
                 <button
-                    onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
-                    disabled={currentPage === totalPages}
+                    onClick={() =>
+                        setUiState((prevState) => ({
+                            ...prevState,
+                            currentPage: Math.min(
+                                prevState.currentPage + 1,
+                                totalPages
+                            ),
+                        }))
+                    }
+                    disabled={uiState.currentPage === totalPages}
                 >
                     Next
                 </button>
             </div>
-
-            <style jsx>{`
-              @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@500;700&family=DM+Sans&display=swap');
-
-              .container {
-                padding: 40px;
-                background: url('Screenshot 2024-12-13 124659.png') no-repeat center center;
-                background-size: cover;
-                color: #1b1c1d;
-                font-family: 'Poppins', sans-serif;
-                min-height: 100vh;
-                display: flex;
-                flex-direction: column;
-              }
-              .title {
-                font-size: 2.8rem;
-                font-weight: 700;
-                text-align: center;
-                margin-bottom: 20px;
-                color: #1b1c1d;
-              }
-              .search-bar {
-                margin-bottom: 20px;
-                padding: 12px;
-                width: 100%;
-                font-size: 1rem;
-                border: 1px solid #d0d4d8;
-                border-radius: 5px;
-                color: #848d97;
-              }
-              .form {
-                margin-bottom: 20px;
-                display: flex;
-                gap: 15px;
-                justify-content: center;
-              }
-              .form input {
-                padding: 12px;
-                font-size: 1rem;
-                border: 1px solid #d0d4d8;
-                border-radius: 5px;
-                width: 200px;
-                color: #848d97;
-              }
-              .form button {
-                padding: 12px 40px;
-                font-size: 1rem;
-                color: white;
-                background: #848d97;
-                border-radius: 5px;
-                cursor: pointer;
-                transition: 0.3s ease;
-              }
-              .form button:hover {
-                background: #1b1c1d;
-              }
-              table {
-                width: 100%;
-                margin-top: 20px;
-                border-collapse: collapse;
-                border: 1px solid #d0d4d8;
-                border-radius: 5px;
-                overflow: hidden;
-                background-color: rgba(255, 255, 255, 0.6);
-              }
-              th,
-              td {
-                padding: 15px;
-                text-align: left;
-                border-bottom: 1px solid #d0d4d8;
-              }
-              th {
-                background-color: #e0e3e6;
-                font-weight: 500;
-              }
-              tr:nth-child(even) {
-                background: #f9f9f9;
-              }
-              tr:hover {
-                background: #e0e3e6;
-              }
-              .pagination {
-                margin-top: 20px;
-                display: flex;
-                justify-content: center;
-                gap: 15px;
-              }
-              .pagination button {
-                padding: 12px 20px;
-                font-size: 1rem;
-                color: white;
-                background: #848d97;
-                border-radius: 5px;
-                cursor: pointer;
-                transition: 0.3s ease;
-              }
-              .pagination button:hover {
-                background: #1b1c1d;
-              }
-              .quoted-content {
-                margin-bottom: 20px;
-                background-color: rgba(255, 255, 255, 0.6);
-                padding: 40px;
-                border-radius: 10px;
-                color: #1b1c1d;
-              }
-              .quoted-content h2 {
-                margin-bottom: 10px;
-              }
-              .quoted-content button {
-                margin-top: 10px;
-                padding: 10px 15px;
-                background: #848d97;
-                border: none;
-                color: white;
-                border-radius: 5px;
-                cursor: pointer;
-              }
-            `}</style>
+            <div className={styles.goUpButton} onClick={handleGoUp}>
+                <img src="/up-chevron_8213555.png" alt="Go to top" />
+            </div>
         </div>
     );
 }
 
-// Load data from the JSON file
 export async function getStaticProps() {
     const leavesData = require("../data/leaves.json");
     return {
