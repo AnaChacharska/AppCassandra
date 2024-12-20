@@ -295,10 +295,9 @@ export default function Home({ leavesData }) {
                     Next
                 </button>
             </div>
-
-            <button className={styles.goUpButton} onClick={handleGoUp}>
-                Go Up
-            </button>
+            <div className={styles.goUpButton} onClick={handleGoUp}>
+                <img src="/up-chevron_8213555.png" alt="Go to top" />
+            </div>
         </div>
     );
 }
