@@ -3,34 +3,39 @@ import Card from "../components/Card";
 import styles from "./Home.module.css";
 
 export default function Home({ leavesData }) {
-    const [filteredData, setFilteredData] = useState(leavesData || []);
-    const [searchQuery, setSearchQuery] = useState("");
-    const [currentPage, setCurrentPage] = useState(1);
-    const itemsPerPage = 9;
-    const [isDarkMode, setIsDarkMode] = useState(false);
-
-    const [formState, setFormState] = useState({ id: "", title: "", domain_name: "" });
-    const [modalState, setModalState] = useState({
-        isEditing: false,
-        isModalOpen: false,
-        successMessage: "",
-        deleteRecord: null,
-        isDeleteModalOpen: false,
+    const [dataState, setDataState] = useState({
+        filteredData: leavesData || [],
+        formState: { id: "", title: "", domain_name: "" },
     });
+
+    const [uiState, setUiState] = useState({
+        searchQuery: "",
+        currentPage: 1,
+        isDarkMode: false,
+        modalState: {
+            isEditing: false,
+            isModalOpen: false,
+            successMessage: "",
+            deleteRecord: null,
+            isDeleteModalOpen: false,
+        },
+    });
+
+    const itemsPerPage = 9;
 
     useEffect(() => {
         const savedMode = localStorage.getItem("darkMode") === "true";
-        setIsDarkMode(savedMode);
+        setUiState((prevState) => ({ ...prevState, isDarkMode: savedMode }));
     }, []);
 
     const handleSearch = (query) => {
-        setSearchQuery(query);
+        setUiState((prevState) => ({ ...prevState, searchQuery: query }));
         const lowerCaseQuery = query.toLowerCase();
         const filtered = leavesData.filter((item) =>
             item.title.toLowerCase().includes(lowerCaseQuery)
         );
-        setFilteredData(filtered);
-        setCurrentPage(1);
+        setDataState((prevState) => ({ ...prevState, filteredData: filtered }));
+        setUiState((prevState) => ({ ...prevState, currentPage: 1 }));
     };
 
     const handleGoUp = () => {
@@ -39,96 +44,125 @@ export default function Home({ leavesData }) {
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
-        setFormState({ ...formState, [name]: value });
+        setDataState((prevState) => ({
+            ...prevState,
+            formState: { ...prevState.formState, [name]: value },
+        }));
     };
 
     const handleAddRecord = () => {
-        if (!formState.title || !formState.domain_name) {
+        if (!dataState.formState.title || !dataState.formState.domain_name) {
             alert("Please fill out all fields.");
             return;
         }
 
         const newRecord = {
-            id: filteredData.length + 1,
-            title: formState.title,
-            domain_name: formState.domain_name,
+            id: dataState.filteredData.length + 1,
+            title: dataState.formState.title,
+            domain_name: dataState.formState.domain_name,
         };
 
-        setFilteredData([newRecord, ...filteredData]);
-        setFormState({ id: "", title: "", domain_name: "" });
-        setModalState({
-            ...modalState,
-            isModalOpen: false,
-            successMessage: "Record added successfully!",
-        });
-        setTimeout(() => setModalState({ ...modalState, successMessage: "" }), 3000);
+        setDataState((prevState) => ({
+            ...prevState,
+            filteredData: [newRecord, ...prevState.filteredData],
+            formState: { id: "", title: "", domain_name: "" },
+        }));
+        setUiState((prevState) => ({
+            ...prevState,
+            modalState: {
+                ...prevState.modalState,
+                isModalOpen: false,
+                successMessage: "Record added successfully!",
+            },
+        }));
+        setTimeout(() => setUiState((prevState) => ({
+            ...prevState,
+            modalState: { ...prevState.modalState, successMessage: "" },
+        })), 3000);
     };
 
     const handleEdit = (record) => {
-        setFormState(record);
-        setModalState({ ...modalState, isEditing: true, isModalOpen: true });
+        setDataState((prevState) => ({ ...prevState, formState: record }));
+        setUiState((prevState) => ({
+            ...prevState,
+            modalState: { ...prevState.modalState, isEditing: true, isModalOpen: true },
+        }));
     };
 
     const handleUpdateRecord = () => {
-        const updatedData = filteredData.map((item) =>
-            item.id === formState.id ? formState : item
+        const updatedData = dataState.filteredData.map((item) =>
+            item.id === dataState.formState.id ? dataState.formState : item
         );
 
-        setFilteredData(updatedData);
-        setFormState({ id: "", title: "", domain_name: "" });
-        setModalState({
-            ...modalState,
-            isEditing: false,
-            isModalOpen: false,
-            successMessage: "Record updated successfully!",
-        });
-        setTimeout(() => setModalState({ ...modalState, successMessage: "" }), 3000);
+        setDataState((prevState) => ({
+            ...prevState,
+            filteredData: updatedData,
+            formState: { id: "", title: "", domain_name: "" },
+        }));
+        setUiState((prevState) => ({
+            ...prevState,
+            modalState: {
+                ...prevState.modalState,
+                isEditing: false,
+                isModalOpen: false,
+                successMessage: "Record updated successfully!",
+            },
+        }));
+        setTimeout(() => setUiState((prevState) => ({
+            ...prevState,
+            modalState: { ...prevState.modalState, successMessage: "" },
+        })), 3000);
     };
 
     const handleDelete = (id) => {
-        setModalState({ ...modalState, deleteRecord: id, isDeleteModalOpen: true });
+        setUiState((prevState) => ({
+            ...prevState,
+            modalState: { ...prevState.modalState, deleteRecord: id, isDeleteModalOpen: true },
+        }));
     };
 
     const confirmDelete = () => {
-        const updatedData = filteredData.filter((item) => item.id !== modalState.deleteRecord);
-        setFilteredData(updatedData);
-        setModalState({
-            ...modalState,
-            deleteRecord: null,
-            isDeleteModalOpen: false,
-        });
+        const updatedData = dataState.filteredData.filter((item) => item.id !== uiState.modalState.deleteRecord);
+        setDataState((prevState) => ({ ...prevState, filteredData: updatedData }));
+        setUiState((prevState) => ({
+            ...prevState,
+            modalState: { ...prevState.modalState, deleteRecord: null, isDeleteModalOpen: false },
+        }));
         alert("Record deleted successfully.");
     };
 
     const cancelDelete = () => {
-        setModalState({ ...modalState, deleteRecord: null, isDeleteModalOpen: false });
+        setUiState((prevState) => ({
+            ...prevState,
+            modalState: { ...prevState.modalState, deleteRecord: null, isDeleteModalOpen: false },
+        }));
     };
 
-    const totalPages = Math.ceil((filteredData?.length || 0) / itemsPerPage);
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    const paginatedData = filteredData.slice(startIndex, startIndex + itemsPerPage);
+    const totalPages = Math.ceil((dataState.filteredData?.length || 0) / itemsPerPage);
+    const startIndex = (uiState.currentPage - 1) * itemsPerPage;
+    const paginatedData = dataState.filteredData.slice(startIndex, startIndex + itemsPerPage);
 
     const toggleDarkMode = () => {
-        setIsDarkMode((prevMode) => {
-            const newMode = !prevMode;
+        setUiState((prevState) => {
+            const newMode = !prevState.isDarkMode;
             localStorage.setItem("darkMode", newMode);
-            return newMode;
+            return { ...prevState, isDarkMode: newMode };
         });
     };
 
     return (
-        <div className={`${styles.container} ${isDarkMode ? styles.dark : ""}`}>
+        <div className={`${styles.container} ${uiState.isDarkMode ? styles.dark : ""}`}>
             <h1 className={styles.title}>Cassandra Leaves Dashboard</h1>
 
-            {modalState.successMessage && (
-                <div className={styles.successMessage}>{modalState.successMessage}</div>
+            {uiState.modalState.successMessage && (
+                <div className={styles.successMessage}>{uiState.modalState.successMessage}</div>
             )}
 
             <div className={styles.toggleContainer}>
                 <label className={styles.toggleSwitch}>
                     <input
                         type="checkbox"
-                        checked={isDarkMode}
+                        checked={uiState.isDarkMode}
                         onChange={toggleDarkMode}
                     />
                     <span className={styles.slider}></span>
@@ -139,46 +173,52 @@ export default function Home({ leavesData }) {
                 <input
                     type="text"
                     placeholder="Search by title..."
-                    value={searchQuery}
+                    value={uiState.searchQuery}
                     onChange={(e) => handleSearch(e.target.value)}
                     className={styles.searchBar}
                 />
-                <button className={styles.addButton} onClick={() => setModalState({ ...modalState, isEditing: false, isModalOpen: true })}>
+                <button className={styles.addButton} onClick={() => setUiState((prevState) => ({
+                    ...prevState,
+                    modalState: { ...prevState.modalState, isEditing: false, isModalOpen: true },
+                }))}>
                     Add Record
                 </button>
             </div>
 
-            {modalState.isModalOpen && (
+            {uiState.modalState.isModalOpen && (
                 <div className={styles.modal}>
                     <div className={styles.modalContent}>
-                        <h2>{modalState.isEditing ? "Edit Record" : "Add New Record"}</h2>
+                        <h2>{uiState.modalState.isEditing ? "Edit Record" : "Add New Record"}</h2>
                         <input
                             type="text"
                             name="title"
                             placeholder="Title"
-                            value={formState.title}
+                            value={dataState.formState.title}
                             onChange={handleInputChange}
                         />
                         <input
                             type="text"
                             name="domain_name"
                             placeholder="Domain"
-                            value={formState.domain_name}
+                            value={dataState.formState.domain_name}
                             onChange={handleInputChange}
                         />
                         <div className={styles.modalActions}>
-                            {modalState.isEditing ? (
+                            {uiState.modalState.isEditing ? (
                                 <button onClick={handleUpdateRecord}>Update</button>
                             ) : (
                                 <button onClick={handleAddRecord}>Add</button>
                             )}
-                            <button onClick={() => setModalState({ ...modalState, isModalOpen: false })}>Cancel</button>
+                            <button onClick={() => setUiState((prevState) => ({
+                                ...prevState,
+                                modalState: { ...prevState.modalState, isModalOpen: false },
+                            }))}>Cancel</button>
                         </div>
                     </div>
                 </div>
             )}
 
-            {modalState.isDeleteModalOpen && (
+            {uiState.modalState.isDeleteModalOpen && (
                 <div className={styles.modal}>
                     <div className={styles.modalContent}>
                         <h2>Confirm Deletion</h2>
@@ -204,17 +244,17 @@ export default function Home({ leavesData }) {
 
             <div className={styles.pagination}>
                 <button
-                    onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-                    disabled={currentPage === 1}
+                    onClick={() => setUiState((prevState) => ({ ...prevState, currentPage: Math.max(prevState.currentPage - 1, 1) }))}
+                    disabled={uiState.currentPage === 1}
                 >
                     Previous
                 </button>
                 <span>
-                    Page {currentPage} of {totalPages}
+                    Page {uiState.currentPage} of {totalPages}
                 </span>
                 <button
-                    onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
-                    disabled={currentPage === totalPages}
+                    onClick={() => setUiState((prevState) => ({ ...prevState, currentPage: Math.min(prevState.currentPage + 1, totalPages) }))}
+                    disabled={uiState.currentPage === totalPages}
                 >
                     Next
                 </button>
