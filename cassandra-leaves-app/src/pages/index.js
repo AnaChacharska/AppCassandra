@@ -1,10 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Card from "../components/Card";
 import styles from "./Home.module.css";
 
 export default function Home({ leavesData }) {
     const [dataState, setDataState] = useState({
-        filteredData: leavesData || [],
         formState: { id: "", title: "", domain_name: "" },
     });
 
@@ -28,14 +27,20 @@ export default function Home({ leavesData }) {
         setUiState((prevState) => ({ ...prevState, isDarkMode: savedMode }));
     }, []);
 
-    const handleSearch = (query) => {
-        setUiState((prevState) => ({ ...prevState, searchQuery: query }));
-        const lowerCaseQuery = query.toLowerCase();
-        const filtered = leavesData.filter((item) =>
+    // Use useMemo to derive filteredData
+    const filteredData = useMemo(() => {
+        const lowerCaseQuery = uiState.searchQuery.toLowerCase();
+        return leavesData?.filter((item) =>
             item.title.toLowerCase().includes(lowerCaseQuery)
-        );
-        setDataState((prevState) => ({ ...prevState, filteredData: filtered }));
-        setUiState((prevState) => ({ ...prevState, currentPage: 1 }));
+        ) || [];
+    }, [leavesData, uiState.searchQuery]);
+
+    const handleSearch = (query) => {
+        setUiState((prevState) => ({
+            ...prevState,
+            searchQuery: query,
+            currentPage: 1,
+        }));
     };
 
     const handleGoUp = () => {
@@ -57,14 +62,14 @@ export default function Home({ leavesData }) {
         }
 
         const newRecord = {
-            id: dataState.filteredData.length + 1,
+            id: filteredData.length + 1,
             title: dataState.formState.title,
             domain_name: dataState.formState.domain_name,
         };
 
+        leavesData.unshift(newRecord); // Add the new record to the original data
         setDataState((prevState) => ({
             ...prevState,
-            filteredData: [newRecord, ...prevState.filteredData],
             formState: { id: "", title: "", domain_name: "" },
         }));
         setUiState((prevState) => ({
@@ -75,10 +80,12 @@ export default function Home({ leavesData }) {
                 successMessage: "Record added successfully!",
             },
         }));
-        setTimeout(() => setUiState((prevState) => ({
-            ...prevState,
-            modalState: { ...prevState.modalState, successMessage: "" },
-        })), 3000);
+        setTimeout(() =>
+                setUiState((prevState) => ({
+                    ...prevState,
+                    modalState: { ...prevState.modalState, successMessage: "" },
+                }))
+            , 3000);
     };
 
     const handleEdit = (record) => {
@@ -90,13 +97,11 @@ export default function Home({ leavesData }) {
     };
 
     const handleUpdateRecord = () => {
-        const updatedData = dataState.filteredData.map((item) =>
-            item.id === dataState.formState.id ? dataState.formState : item
-        );
+        const index = leavesData.findIndex((item) => item.id === dataState.formState.id);
+        if (index !== -1) leavesData[index] = dataState.formState;
 
         setDataState((prevState) => ({
             ...prevState,
-            filteredData: updatedData,
             formState: { id: "", title: "", domain_name: "" },
         }));
         setUiState((prevState) => ({
@@ -108,10 +113,12 @@ export default function Home({ leavesData }) {
                 successMessage: "Record updated successfully!",
             },
         }));
-        setTimeout(() => setUiState((prevState) => ({
-            ...prevState,
-            modalState: { ...prevState.modalState, successMessage: "" },
-        })), 3000);
+        setTimeout(() =>
+                setUiState((prevState) => ({
+                    ...prevState,
+                    modalState: { ...prevState.modalState, successMessage: "" },
+                }))
+            , 3000);
     };
 
     const handleDelete = (id) => {
@@ -122,8 +129,9 @@ export default function Home({ leavesData }) {
     };
 
     const confirmDelete = () => {
-        const updatedData = dataState.filteredData.filter((item) => item.id !== uiState.modalState.deleteRecord);
-        setDataState((prevState) => ({ ...prevState, filteredData: updatedData }));
+        const index = leavesData.findIndex((item) => item.id === uiState.modalState.deleteRecord);
+        if (index !== -1) leavesData.splice(index, 1);
+
         setUiState((prevState) => ({
             ...prevState,
             modalState: { ...prevState.modalState, deleteRecord: null, isDeleteModalOpen: false },
@@ -138,9 +146,9 @@ export default function Home({ leavesData }) {
         }));
     };
 
-    const totalPages = Math.ceil((dataState.filteredData?.length || 0) / itemsPerPage);
+    const totalPages = Math.ceil(filteredData.length / itemsPerPage);
     const startIndex = (uiState.currentPage - 1) * itemsPerPage;
-    const paginatedData = dataState.filteredData.slice(startIndex, startIndex + itemsPerPage);
+    const paginatedData = filteredData.slice(startIndex, startIndex + itemsPerPage);
 
     const toggleDarkMode = () => {
         setUiState((prevState) => {
@@ -177,14 +185,20 @@ export default function Home({ leavesData }) {
                     onChange={(e) => handleSearch(e.target.value)}
                     className={styles.searchBar}
                 />
-                <button className={styles.addButton} onClick={() => setUiState((prevState) => ({
-                    ...prevState,
-                    modalState: { ...prevState.modalState, isEditing: false, isModalOpen: true },
-                }))}>
+                <button
+                    className={styles.addButton}
+                    onClick={() =>
+                        setUiState((prevState) => ({
+                            ...prevState,
+                            modalState: { ...prevState.modalState, isEditing: false, isModalOpen: true },
+                        }))
+                    }
+                >
                     Add Record
                 </button>
             </div>
 
+            {/* Modal for Add/Edit */}
             {uiState.modalState.isModalOpen && (
                 <div className={styles.modal}>
                     <div className={styles.modalContent}>
@@ -209,15 +223,22 @@ export default function Home({ leavesData }) {
                             ) : (
                                 <button onClick={handleAddRecord}>Add</button>
                             )}
-                            <button onClick={() => setUiState((prevState) => ({
-                                ...prevState,
-                                modalState: { ...prevState.modalState, isModalOpen: false },
-                            }))}>Cancel</button>
+                            <button
+                                onClick={() =>
+                                    setUiState((prevState) => ({
+                                        ...prevState,
+                                        modalState: { ...prevState.modalState, isModalOpen: false },
+                                    }))
+                                }
+                            >
+                                Cancel
+                            </button>
                         </div>
                     </div>
                 </div>
             )}
 
+            {/* Modal for Delete Confirmation */}
             {uiState.modalState.isDeleteModalOpen && (
                 <div className={styles.modal}>
                     <div className={styles.modalContent}>
@@ -231,6 +252,7 @@ export default function Home({ leavesData }) {
                 </div>
             )}
 
+            {/* Display Data */}
             <div className={styles.grid}>
                 {paginatedData.map((item) => (
                     <Card
@@ -242,9 +264,15 @@ export default function Home({ leavesData }) {
                 ))}
             </div>
 
+            {/* Pagination */}
             <div className={styles.pagination}>
                 <button
-                    onClick={() => setUiState((prevState) => ({ ...prevState, currentPage: Math.max(prevState.currentPage - 1, 1) }))}
+                    onClick={() =>
+                        setUiState((prevState) => ({
+                            ...prevState,
+                            currentPage: Math.max(prevState.currentPage - 1, 1),
+                        }))
+                    }
                     disabled={uiState.currentPage === 1}
                 >
                     Previous
@@ -253,16 +281,24 @@ export default function Home({ leavesData }) {
                     Page {uiState.currentPage} of {totalPages}
                 </span>
                 <button
-                    onClick={() => setUiState((prevState) => ({ ...prevState, currentPage: Math.min(prevState.currentPage + 1, totalPages) }))}
+                    onClick={() =>
+                        setUiState((prevState) => ({
+                            ...prevState,
+                            currentPage: Math.min(
+                                prevState.currentPage + 1,
+                                totalPages
+                            ),
+                        }))
+                    }
                     disabled={uiState.currentPage === totalPages}
                 >
                     Next
                 </button>
             </div>
 
-            <div className={styles.goUpButton} onClick={handleGoUp}>
-                <img src="/up-chevron_8213555.png" alt="Go to top" />
-            </div>
+            <button className={styles.goUpButton} onClick={handleGoUp}>
+                Go Up
+            </button>
         </div>
     );
 }
