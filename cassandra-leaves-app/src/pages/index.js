@@ -1,12 +1,10 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import Card from "../components/Card";
 import styles from "./Home.module.css";
 
 export default function Home({ leavesData }) {
-    const [dataState, setDataState] = useState({
-        formState: { id: "", title: "", domain_name: "" },
-    });
-
+    // Initialize leavesData as state
+    const [leaves, setLeaves] = useState(leavesData || []);
     const [uiState, setUiState] = useState({
         searchQuery: "",
         currentPage: 1,
@@ -20,26 +18,35 @@ export default function Home({ leavesData }) {
         },
     });
 
-    const itemsPerPage = 9;
+    const [formState, setFormState] = useState({
+        id: "",
+        title: "",
+        domain_name: "",
+    });
+
+    const itemsPerPage = 8;
 
     useEffect(() => {
         const savedMode = localStorage.getItem("darkMode") === "true";
         setUiState((prevState) => ({ ...prevState, isDarkMode: savedMode }));
     }, []);
 
-    // Use useMemo to derive filteredData
+    // Derived filteredData using useMemo to handle search filtering
     const filteredData = useMemo(() => {
-        const lowerCaseQuery = uiState.searchQuery.toLowerCase();
-        return leavesData?.filter((item) =>
-            item.title.toLowerCase().includes(lowerCaseQuery)
-        ) || [];
-    }, [leavesData, uiState.searchQuery]);
+        return leaves.filter((item) =>
+            item.title.toLowerCase().includes(uiState.searchQuery.toLowerCase())
+        );
+    }, [leaves, uiState.searchQuery]);
+
+    const totalPages = Math.ceil(filteredData.length / itemsPerPage);
+    const startIndex = (uiState.currentPage - 1) * itemsPerPage;
+    const paginatedData = filteredData.slice(startIndex, startIndex + itemsPerPage);
 
     const handleSearch = (query) => {
         setUiState((prevState) => ({
             ...prevState,
             searchQuery: query,
-            currentPage: 1,
+            currentPage: 1, // Reset to the first page on new search
         }));
     };
 
@@ -49,47 +56,41 @@ export default function Home({ leavesData }) {
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
-        setDataState((prevState) => ({
+        setFormState((prevState) => ({
             ...prevState,
-            formState: { ...prevState.formState, [name]: value },
+            [name]: value,
         }));
     };
 
     const handleAddRecord = () => {
-        if (!dataState.formState.title || !dataState.formState.domain_name) {
+        if (!formState.title || !formState.domain_name) {
             alert("Please fill out all fields.");
             return;
         }
 
         const newRecord = {
-            id: filteredData.length + 1,
-            title: dataState.formState.title,
-            domain_name: dataState.formState.domain_name,
+            id: leaves.length + 1,
+            title: formState.title,
+            domain_name: formState.domain_name,
         };
 
-        leavesData.unshift(newRecord); // Add the new record to the original data
-        setDataState((prevState) => ({
-            ...prevState,
-            formState: { id: "", title: "", domain_name: "" },
-        }));
+        setLeaves((prevLeaves) => [newRecord, ...prevLeaves]);
+        setFormState({ id: "", title: "", domain_name: "" });
         setUiState((prevState) => ({
             ...prevState,
-            modalState: {
-                ...prevState.modalState,
-                isModalOpen: false,
-                successMessage: "Record added successfully!",
-            },
+            modalState: { ...prevState.modalState, isModalOpen: false, successMessage: "Record added successfully!" },
         }));
-        setTimeout(() =>
-                setUiState((prevState) => ({
-                    ...prevState,
-                    modalState: { ...prevState.modalState, successMessage: "" },
-                }))
-            , 3000);
+
+        setTimeout(() => {
+            setUiState((prevState) => ({
+                ...prevState,
+                modalState: { ...prevState.modalState, successMessage: "" },
+            }));
+        }, 3000);
     };
 
     const handleEdit = (record) => {
-        setDataState((prevState) => ({ ...prevState, formState: record }));
+        setFormState(record);
         setUiState((prevState) => ({
             ...prevState,
             modalState: { ...prevState.modalState, isEditing: true, isModalOpen: true },
@@ -97,13 +98,12 @@ export default function Home({ leavesData }) {
     };
 
     const handleUpdateRecord = () => {
-        const index = leavesData.findIndex((item) => item.id === dataState.formState.id);
-        if (index !== -1) leavesData[index] = dataState.formState;
+        const updatedLeaves = leaves.map((item) =>
+            item.id === formState.id ? formState : item
+        );
 
-        setDataState((prevState) => ({
-            ...prevState,
-            formState: { id: "", title: "", domain_name: "" },
-        }));
+        setLeaves(updatedLeaves);
+        setFormState({ id: "", title: "", domain_name: "" });
         setUiState((prevState) => ({
             ...prevState,
             modalState: {
@@ -113,12 +113,13 @@ export default function Home({ leavesData }) {
                 successMessage: "Record updated successfully!",
             },
         }));
-        setTimeout(() =>
-                setUiState((prevState) => ({
-                    ...prevState,
-                    modalState: { ...prevState.modalState, successMessage: "" },
-                }))
-            , 3000);
+
+        setTimeout(() => {
+            setUiState((prevState) => ({
+                ...prevState,
+                modalState: { ...prevState.modalState, successMessage: "" },
+            }));
+        }, 3000);
     };
 
     const handleDelete = (id) => {
@@ -129,9 +130,8 @@ export default function Home({ leavesData }) {
     };
 
     const confirmDelete = () => {
-        const index = leavesData.findIndex((item) => item.id === uiState.modalState.deleteRecord);
-        if (index !== -1) leavesData.splice(index, 1);
-
+        const updatedLeaves = leaves.filter((item) => item.id !== uiState.modalState.deleteRecord);
+        setLeaves(updatedLeaves);
         setUiState((prevState) => ({
             ...prevState,
             modalState: { ...prevState.modalState, deleteRecord: null, isDeleteModalOpen: false },
@@ -145,10 +145,6 @@ export default function Home({ leavesData }) {
             modalState: { ...prevState.modalState, deleteRecord: null, isDeleteModalOpen: false },
         }));
     };
-
-    const totalPages = Math.ceil(filteredData.length / itemsPerPage);
-    const startIndex = (uiState.currentPage - 1) * itemsPerPage;
-    const paginatedData = filteredData.slice(startIndex, startIndex + itemsPerPage);
 
     const toggleDarkMode = () => {
         setUiState((prevState) => {
@@ -185,20 +181,14 @@ export default function Home({ leavesData }) {
                     onChange={(e) => handleSearch(e.target.value)}
                     className={styles.searchBar}
                 />
-                <button
-                    className={styles.addButton}
-                    onClick={() =>
-                        setUiState((prevState) => ({
-                            ...prevState,
-                            modalState: { ...prevState.modalState, isEditing: false, isModalOpen: true },
-                        }))
-                    }
-                >
+                <button className={styles.addButton} onClick={() => setUiState((prevState) => ({
+                    ...prevState,
+                    modalState: { ...prevState.modalState, isEditing: false, isModalOpen: true },
+                }))}>
                     Add Record
                 </button>
             </div>
 
-            {/* Modal for Add/Edit */}
             {uiState.modalState.isModalOpen && (
                 <div className={styles.modal}>
                     <div className={styles.modalContent}>
@@ -207,14 +197,14 @@ export default function Home({ leavesData }) {
                             type="text"
                             name="title"
                             placeholder="Title"
-                            value={dataState.formState.title}
+                            value={formState.title}
                             onChange={handleInputChange}
                         />
                         <input
                             type="text"
                             name="domain_name"
                             placeholder="Domain"
-                            value={dataState.formState.domain_name}
+                            value={formState.domain_name}
                             onChange={handleInputChange}
                         />
                         <div className={styles.modalActions}>
@@ -223,22 +213,15 @@ export default function Home({ leavesData }) {
                             ) : (
                                 <button onClick={handleAddRecord}>Add</button>
                             )}
-                            <button
-                                onClick={() =>
-                                    setUiState((prevState) => ({
-                                        ...prevState,
-                                        modalState: { ...prevState.modalState, isModalOpen: false },
-                                    }))
-                                }
-                            >
-                                Cancel
-                            </button>
+                            <button onClick={() => setUiState((prevState) => ({
+                                ...prevState,
+                                modalState: { ...prevState.modalState, isModalOpen: false },
+                            }))}>Cancel</button>
                         </div>
                     </div>
                 </div>
             )}
 
-            {/* Modal for Delete Confirmation */}
             {uiState.modalState.isDeleteModalOpen && (
                 <div className={styles.modal}>
                     <div className={styles.modalContent}>
@@ -252,7 +235,6 @@ export default function Home({ leavesData }) {
                 </div>
             )}
 
-            {/* Display Data */}
             <div className={styles.grid}>
                 {paginatedData.map((item) => (
                     <Card
@@ -264,15 +246,9 @@ export default function Home({ leavesData }) {
                 ))}
             </div>
 
-            {/* Pagination */}
             <div className={styles.pagination}>
                 <button
-                    onClick={() =>
-                        setUiState((prevState) => ({
-                            ...prevState,
-                            currentPage: Math.max(prevState.currentPage - 1, 1),
-                        }))
-                    }
+                    onClick={() => setUiState((prevState) => ({ ...prevState, currentPage: Math.max(prevState.currentPage - 1, 1) }))}
                     disabled={uiState.currentPage === 1}
                 >
                     Previous
@@ -281,20 +257,13 @@ export default function Home({ leavesData }) {
                     Page {uiState.currentPage} of {totalPages}
                 </span>
                 <button
-                    onClick={() =>
-                        setUiState((prevState) => ({
-                            ...prevState,
-                            currentPage: Math.min(
-                                prevState.currentPage + 1,
-                                totalPages
-                            ),
-                        }))
-                    }
+                    onClick={() => setUiState((prevState) => ({ ...prevState, currentPage: Math.min(prevState.currentPage + 1, totalPages) }))}
                     disabled={uiState.currentPage === totalPages}
                 >
                     Next
                 </button>
             </div>
+
             <div className={styles.goUpButton} onClick={handleGoUp}>
                 <img src="/up-chevron_8213555.png" alt="Go to top" />
             </div>
