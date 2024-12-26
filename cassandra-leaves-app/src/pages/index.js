@@ -1,10 +1,13 @@
 import { useState, useMemo } from "react";
-import { useModal, useDarkMode } from "../hooks/useModal";
-import Card from "../components/Card";
-import styles from "./Home.module.css";
+import { useModal, useDarkMode } from "../hooks/useModal"; // Custom hooks for managing modal and dark mode
+import Card from "../components/Card"; // Reusable Card component to display data
+import styles from "./Home.module.css"; // CSS module for styling
 
 export default function Home({ leavesData }) {
+    // State to manage the list of leaves data
     const [leaves, setLeaves] = useState(leavesData || []);
+
+    // State to manage UI-specific details like search, pagination, and modal
     const [uiState, setUiState] = useState({
         searchQuery: "",
         currentPage: 1,
@@ -16,29 +19,40 @@ export default function Home({ leavesData }) {
         },
     });
 
+    // State to manage the form fields for adding or editing records
     const [formState, setFormState] = useState({
         id: "",
         title: "",
         domain_name: "",
     });
 
+    // Custom hook to manage dark mode functionality
     const { isDarkMode, toggleDarkMode } = useDarkMode();
+
+    // Custom hook to manage the modal state for adding/editing records
     const { isModalOpen, openModal, closeModal } = useModal();
+
+    // Custom hook to manage the modal state for delete confirmation
     const { isModalOpen: isDeleteModalOpen, openModal: openDeleteModal, closeModal: closeDeleteModal } = useModal();
 
+    // Pagination settings
     const itemsPerPage = 8;
 
-    // Derived filteredData using useMemo to handle search filtering
+    // Memoized value to filter the leaves data based on the search query
     const filteredData = useMemo(() => {
         return leaves.filter((item) =>
             item.title.toLowerCase().includes(uiState.searchQuery.toLowerCase())
         );
     }, [leaves, uiState.searchQuery]);
 
+    // Calculate the total number of pages based on filtered data
     const totalPages = Math.ceil(filteredData.length / itemsPerPage);
+
+    // Slice the data to show only the records for the current page
     const startIndex = (uiState.currentPage - 1) * itemsPerPage;
     const paginatedData = filteredData.slice(startIndex, startIndex + itemsPerPage);
 
+    // Handles updating the search query and resets pagination
     const handleSearch = (query) => {
         setUiState((prevState) => ({
             ...prevState,
@@ -47,6 +61,7 @@ export default function Home({ leavesData }) {
         }));
     };
 
+    // Handles changes in form input fields
     const handleInputChange = (e) => {
         const { name, value } = e.target;
         setFormState((prevState) => ({
@@ -55,6 +70,7 @@ export default function Home({ leavesData }) {
         }));
     };
 
+    // Adds a new record to the list
     const handleAddRecord = () => {
         if (!formState.title || !formState.domain_name) {
             alert("Please fill out all fields.");
@@ -67,14 +83,15 @@ export default function Home({ leavesData }) {
             domain_name: formState.domain_name,
         };
 
-        setLeaves((prevLeaves) => [newRecord, ...prevLeaves]);
-        setFormState({ id: "", title: "", domain_name: "" });
-        closeModal();
+        setLeaves((prevLeaves) => [newRecord, ...prevLeaves]); // Add the new record to the top of the list
+        setFormState({ id: "", title: "", domain_name: "" }); // Reset the form state
+        closeModal(); // Close the modal
         setUiState((prevState) => ({
             ...prevState,
             modalState: { ...prevState.modalState, successMessage: "Record added successfully!" },
         }));
 
+        // Clear the success message after 3 seconds
         setTimeout(() => {
             setUiState((prevState) => ({
                 ...prevState,
@@ -83,23 +100,25 @@ export default function Home({ leavesData }) {
         }, 3000);
     };
 
+    // Prepares the form state for editing an existing record
     const handleEdit = (record) => {
-        setFormState(record);
-        openModal();
+        setFormState(record); // Populate form state with the selected record's data
+        openModal(); // Open the modal for editing
         setUiState((prevState) => ({
             ...prevState,
             modalState: { ...prevState.modalState, isEditing: true },
         }));
     };
 
+    // Updates the existing record in the list
     const handleUpdateRecord = () => {
         const updatedLeaves = leaves.map((item) =>
             item.id === formState.id ? formState : item
         );
 
-        setLeaves(updatedLeaves);
-        setFormState({ id: "", title: "", domain_name: "" });
-        closeModal();
+        setLeaves(updatedLeaves); // Update the list with the modified record
+        setFormState({ id: "", title: "", domain_name: "" }); // Reset the form state
+        closeModal(); // Close the modal
         setUiState((prevState) => ({
             ...prevState,
             modalState: {
@@ -109,6 +128,7 @@ export default function Home({ leavesData }) {
             },
         }));
 
+        // Clear the success message after 3 seconds
         setTimeout(() => {
             setUiState((prevState) => ({
                 ...prevState,
@@ -117,18 +137,20 @@ export default function Home({ leavesData }) {
         }, 3000);
     };
 
+    // Opens the delete confirmation modal
     const handleDelete = (id) => {
         setUiState((prevState) => ({
             ...prevState,
             modalState: { ...prevState.modalState, deleteRecord: id },
         }));
-        openDeleteModal();
+        openDeleteModal(); // Open the delete confirmation modal
     };
 
+    // Confirms the deletion of a record
     const confirmDelete = () => {
         const updatedLeaves = leaves.filter((item) => item.id !== uiState.modalState.deleteRecord);
-        setLeaves(updatedLeaves);
-        closeDeleteModal();
+        setLeaves(updatedLeaves); // Remove the record from the list
+        closeDeleteModal(); // Close the delete confirmation modal
         alert("Record deleted successfully.");
     };
 
@@ -136,10 +158,12 @@ export default function Home({ leavesData }) {
         <div className={`${styles.container} ${isDarkMode ? styles.dark : ""}`}>
             <h1 className={styles.title}>Cassandra Leaves Dashboard</h1>
 
+            {/* Display success message */}
             {uiState.modalState.successMessage && (
                 <div className={styles.successMessage}>{uiState.modalState.successMessage}</div>
             )}
 
+            {/* Toggle for dark mode */}
             <div className={styles.toggleContainer}>
                 <label className={styles.toggleSwitch}>
                     <input
@@ -151,6 +175,7 @@ export default function Home({ leavesData }) {
                 </label>
             </div>
 
+            {/* Search bar and Add Record button */}
             <div className={styles.searchAddContainer}>
                 <input
                     type="text"
@@ -164,6 +189,7 @@ export default function Home({ leavesData }) {
                 </button>
             </div>
 
+            {/* Modal for adding or editing a record */}
             {isModalOpen && (
                 <div className={styles.modal}>
                     <div className={styles.modalContent}>
@@ -194,6 +220,7 @@ export default function Home({ leavesData }) {
                 </div>
             )}
 
+            {/* Modal for delete confirmation */}
             {isDeleteModalOpen && (
                 <div className={styles.modal}>
                     <div className={styles.modalContent}>
@@ -207,6 +234,7 @@ export default function Home({ leavesData }) {
                 </div>
             )}
 
+            {/* Display the records using the Card component */}
             <div className={styles.grid}>
                 {paginatedData.map((item) => (
                     <Card
@@ -218,6 +246,7 @@ export default function Home({ leavesData }) {
                 ))}
             </div>
 
+            {/* Pagination controls */}
             <div className={styles.pagination}>
                 <button
                     onClick={() =>
@@ -231,8 +260,8 @@ export default function Home({ leavesData }) {
                     Previous
                 </button>
                 <span>
-          Page {uiState.currentPage} of {totalPages}
-        </span>
+                    Page {uiState.currentPage} of {totalPages}
+                </span>
                 <button
                     onClick={() =>
                         setUiState((prevState) => ({
@@ -249,8 +278,9 @@ export default function Home({ leavesData }) {
     );
 }
 
+// Static data fetching function to get leaves data
 export async function getStaticProps() {
-    const leavesData = require("../data/leaves.json");
+    const leavesData = require("../data/leaves.json"); // Load data from a local JSON file
     return {
         props: {
             leavesData,
