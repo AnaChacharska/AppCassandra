@@ -1,29 +1,30 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
-function useModal() {
-    const [isModalOpen, setIsModalOpen] = useState(false);
-    const [isEditing, setIsEditing] = useState(false);
-    const [successMessage, setSuccessMessage] = useState("");
-    const [deleteRecord, setDeleteRecord] = useState(null);
-    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+export function useModal(initialState = false) {
+    const [isModalOpen, setIsModalOpen] = useState(initialState);
 
+    const openModal = () => setIsModalOpen(true);
+    const closeModal = () => setIsModalOpen(false);
     const toggleModal = () => setIsModalOpen((prev) => !prev);
-    const toggleDeleteModal = () => setIsDeleteModalOpen((prev) => !prev);
 
-    return {
-        isModalOpen,
-        setIsModalOpen,
-        isEditing,
-        setIsEditing,
-        successMessage,
-        setSuccessMessage,
-        deleteRecord,
-        setDeleteRecord,
-        isDeleteModalOpen,
-        setIsDeleteModalOpen,
-        toggleModal,
-        toggleDeleteModal,
-    };
+    return { isModalOpen, openModal, closeModal, toggleModal };
 }
 
-export default useModal;
+export function useDarkMode() {
+    const [isDarkMode, setIsDarkMode] = useState(false);
+
+    useEffect(() => {
+        const savedMode = localStorage.getItem("darkMode") === "true";
+        setIsDarkMode(savedMode);
+    }, []);
+
+    const toggleDarkMode = () => {
+        setIsDarkMode((prevMode) => {
+            const newMode = !prevMode;
+            localStorage.setItem("darkMode", newMode);
+            return newMode;
+        });
+    };
+
+    return { isDarkMode, toggleDarkMode };
+}
