@@ -3,6 +3,15 @@ import { useModal, useDarkMode } from "../hooks/useModal"; // Custom hooks for m
 import Card from "../components/Card"; // Reusable Card component to display data
 import styles from "./Home.module.css"; // CSS module for styling
 
+import TestComponent from './TestComponent';
+//
+// export default function Home() {
+//     return (
+//         <div>
+//             <TestComponent />
+//         </div>
+//     );
+// }
 export default function Home({ leavesData }) {
     // State to manage the list of leaves data
     const [leaves, setLeaves] = useState(leavesData || []);
