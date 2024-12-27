@@ -1,18 +1,19 @@
-import { useState, useMemo } from "react";
-import { useModal, useDarkMode } from "../hooks/useModal"; // Custom hooks for managing modal and dark mode
+import {useState, useMemo} from "react";
+import {useModal, useDarkMode} from "../hooks/useModal"; // Custom hooks for managing modal and dark mode
 import Card from "../components/Card"; // Reusable Card component to display data
 import styles from "./Home.module.css"; // CSS module for styling
 
 import TestComponent from './TestComponent';
-//
+
 // export default function Home() {
 //     return (
 //         <div>
-//             <TestComponent />
+//             <TestComponent cassandraLeavesId={17} />
 //         </div>
 //     );
 // }
-export default function Home({ leavesData }) {
+
+export default function Home({leavesData}) {
     // State to manage the list of leaves data
     const [leaves, setLeaves] = useState(leavesData || []);
 
@@ -30,19 +31,34 @@ export default function Home({ leavesData }) {
 
     // State to manage the form fields for adding or editing records
     const [formState, setFormState] = useState({
-        id: "",
-        title: "",
+        content: "",
         domain_name: "",
+        http_status: "",
+        language: "",
+        last_sourced_from_wallabag: "",
+        mimetype: "",
+        preview_picture: "",
+        published_by: "",
+        tags: "",
+        title: "",
+        updated_at: "",
+        url: "",
+        user_email: "",
+        user_id: "",
+        user_name: "",
+        wallabag_created_at: "",
+        wallabag_is_archived: "",
+        wallabag_updated_at: "",
     });
 
     // Custom hook to manage dark mode functionality
-    const { isDarkMode, toggleDarkMode } = useDarkMode();
+    const {isDarkMode, toggleDarkMode} = useDarkMode();
 
     // Custom hook to manage the modal state for adding/editing records
-    const { isModalOpen, openModal, closeModal } = useModal();
+    const {isModalOpen, openModal, closeModal} = useModal();
 
     // Custom hook to manage the modal state for delete confirmation
-    const { isModalOpen: isDeleteModalOpen, openModal: openDeleteModal, closeModal: closeDeleteModal } = useModal();
+    const {isModalOpen: isDeleteModalOpen, openModal: openDeleteModal, closeModal: closeDeleteModal} = useModal();
 
     // Pagination settings
     const itemsPerPage = 8;
@@ -72,7 +88,7 @@ export default function Home({ leavesData }) {
 
     // Handles changes in form input fields
     const handleInputChange = (e) => {
-        const { name, value } = e.target;
+        const {name, value} = e.target;
         setFormState((prevState) => ({
             ...prevState,
             [name]: value,
@@ -93,18 +109,18 @@ export default function Home({ leavesData }) {
         };
 
         setLeaves((prevLeaves) => [newRecord, ...prevLeaves]); // Add the new record to the top of the list
-        setFormState({ id: "", title: "", domain_name: "" }); // Reset the form state
+        setFormState({id: "", title: "", domain_name: ""}); // Reset the form state
         closeModal(); // Close the modal
         setUiState((prevState) => ({
             ...prevState,
-            modalState: { ...prevState.modalState, successMessage: "Record added successfully!" },
+            modalState: {...prevState.modalState, successMessage: "Record added successfully!"},
         }));
 
         // Clear the success message after 3 seconds
         setTimeout(() => {
             setUiState((prevState) => ({
                 ...prevState,
-                modalState: { ...prevState.modalState, successMessage: "" },
+                modalState: {...prevState.modalState, successMessage: ""},
             }));
         }, 3000);
     };
@@ -115,7 +131,7 @@ export default function Home({ leavesData }) {
         openModal(); // Open the modal for editing
         setUiState((prevState) => ({
             ...prevState,
-            modalState: { ...prevState.modalState, isEditing: true },
+            modalState: {...prevState.modalState, isEditing: true},
         }));
     };
 
@@ -126,7 +142,7 @@ export default function Home({ leavesData }) {
         );
 
         setLeaves(updatedLeaves); // Update the list with the modified record
-        setFormState({ id: "", title: "", domain_name: "" }); // Reset the form state
+        setFormState({id: "", title: "", domain_name: ""}); // Reset the form state
         closeModal(); // Close the modal
         setUiState((prevState) => ({
             ...prevState,
@@ -141,7 +157,7 @@ export default function Home({ leavesData }) {
         setTimeout(() => {
             setUiState((prevState) => ({
                 ...prevState,
-                modalState: { ...prevState.modalState, successMessage: "" },
+                modalState: {...prevState.modalState, successMessage: ""},
             }));
         }, 3000);
     };
@@ -150,7 +166,7 @@ export default function Home({ leavesData }) {
     const handleDelete = (id) => {
         setUiState((prevState) => ({
             ...prevState,
-            modalState: { ...prevState.modalState, deleteRecord: id },
+            modalState: {...prevState.modalState, deleteRecord: id},
         }));
         openDeleteModal(); // Open the delete confirmation modal
     };
@@ -205,9 +221,9 @@ export default function Home({ leavesData }) {
                         <h2>{uiState.modalState.isEditing ? "Edit Record" : "Add New Record"}</h2>
                         <input
                             type="text"
-                            name="title"
-                            placeholder="Title"
-                            value={formState.title}
+                            name="content"
+                            placeholder="Content"
+                            value={formState.content}
                             onChange={handleInputChange}
                         />
                         <input
@@ -217,6 +233,119 @@ export default function Home({ leavesData }) {
                             value={formState.domain_name}
                             onChange={handleInputChange}
                         />
+                        <input
+                            type="number"
+                            name="http_status"
+                            placeholder="Http Status"
+                            value={formState.http_status}
+                            onChange={handleInputChange}
+                        />
+                        <input
+                            type="text"
+                            name="language"
+                            placeholder="Language"
+                            value={formState.language}
+                            onChange={handleInputChange}
+                        />
+                        <input
+                            type="date"
+                            name="last_sourced_from_wallabag"
+                            placeholder="Last sourced"
+                            value={formState.last_sourced_from_wallabag}
+                            onChange={handleInputChange}
+                        />
+                        <input
+                            type="text"
+                            name="mimetype"
+                            placeholder="Mimetype"
+                            value={formState.mimetype}
+                            onChange={handleInputChange}
+                        />
+                        <input
+                            type="image"
+                            name="preview_picture"
+                            placeholder="Preview picture"
+                            value={formState.preview_picture}
+                            onChange={handleInputChange}
+                        />
+                        <input
+                            type="text"
+                            name="published_by"
+                            placeholder="Published by"
+                            value={formState.published_by}
+                            onChange={handleInputChange}
+                        />
+                        <input
+                            type="text"                      //not sure about the type i need an array
+                            name="tags[]"
+                            placeholder="Tags"
+                            value={formState.tags}
+                            onChange={handleInputChange}
+                        />
+                        <input
+                            type="text"
+                            name="title"
+                            placeholder="Title"
+                            value={formState.title}
+                            onChange={handleInputChange}
+                        />
+                        <input
+                            type="date"
+                            name="updated_at"
+                            placeholder="Updated at"
+                            value={formState.updated_at}
+                            onChange={handleInputChange}
+                        />
+                        <input
+                            type="text"
+                            name="url"
+                            placeholder="Url"
+                            value={formState.url}
+                            onChange={handleInputChange}
+                        />
+                        <input
+                            type="text"
+                            name="user_email"
+                            placeholder="User email"
+                            value={formState.user_email}
+                            onChange={handleInputChange}
+                        />
+                        <input
+                            type="text"
+                            name="user_id"
+                            placeholder="User id"
+                            value={formState.user_id}
+                            onChange={handleInputChange}
+                        />
+                        <input
+                            type="text"
+                            name="user_name"
+                            placeholder="User name"
+                            value={formState.user_name}
+                            onChange={handleInputChange}
+                        />
+                        <input
+                            type="date"
+                            name="wallabag_created_at"
+                            placeholder="Wallabag created at"
+                            value={formState.wallabag_created_at}
+                            onChange={handleInputChange}
+                        />
+                        <input
+                            type="text"
+                            name="wallabag_is_archived"
+                            placeholder="Wallabag is archived"
+                            value={formState.wallabag_is_archived}
+                            onChange={handleInputChange}
+                        />
+                        <input
+                            type="date"
+                            name="wallabag_updated_at"
+                            placeholder="Wallabag updated at"
+                            value={formState.wallabag_updated_at}
+                            onChange={handleInputChange}
+                        />
+
                         <div className={styles.modalActions}>
                             {uiState.modalState.isEditing ? (
                                 <button onClick={handleUpdateRecord}>Update</button>
