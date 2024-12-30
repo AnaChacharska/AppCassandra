@@ -1,9 +1,10 @@
-import {useState, useMemo} from "react";
+import {useState, useMemo, useEffect} from "react";
 import {useModal, useDarkMode} from "../hooks/useModal"; // Custom hooks for managing modal and dark mode
 import Card from "../components/Card"; // Reusable Card component to display data
 import styles from "./Home.module.css"; // CSS module for styling
 
 import TestComponent from './TestComponent';
+import axios from "axios";
 
 // export default function Home() {
 //     return (
@@ -16,6 +17,7 @@ import TestComponent from './TestComponent';
 export default function Home({leavesData}) {
     // State to manage the list of leaves data
     const [leaves, setLeaves] = useState(leavesData || []);
+    const [error, setError] = useState("");
 
     // State to manage UI-specific details like search, pagination, and modal
     const [uiState, setUiState] = useState({
@@ -28,6 +30,29 @@ export default function Home({leavesData}) {
             isDeleteModalOpen: false,
         },
     });
+
+    // Fetch data from Xano on component mount
+    useEffect(() => {
+        const fetchLeaves = async () => {
+            try {
+                const response = await axios.get(
+                    "https://x8ki-letl-twmt.n7.xano.io/api:WVrFdUAc/cassandra_leaves",
+                    {
+                        params: {
+                            page_number: 1,
+                            offset: 8,
+                        },
+                    }
+                );
+                setLeaves(response.data.items);
+            } catch (error) {
+                setError("Error fetching data");
+                console.error("Error fetching data from Xano:", error);
+            }
+        };
+
+        fetchLeaves();
+    }, []);
 
     // State to manage the form fields for adding or editing records
     const [formState, setFormState] = useState({
