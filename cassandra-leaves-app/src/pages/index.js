@@ -2,17 +2,7 @@ import {useState, useMemo, useEffect} from "react";
 import {useModal, useDarkMode} from "../hooks/useModal"; // Custom hooks for managing modal and dark mode
 import Card from "../components/Card"; // Reusable Card component to display data
 import styles from "./Home.module.css"; // CSS module for styling
-
-import TestComponent from './TestComponent';
 import axios from "axios";
-
-// export default function Home() {
-//     return (
-//         <div>
-//             <TestComponent cassandraLeavesId={17} />
-//         </div>
-//     );
-// }
 
 export default function Home({leavesData}) {
     // State to manage the list of leaves data
@@ -33,25 +23,49 @@ export default function Home({leavesData}) {
 
     // Fetch data from Xano on component mount
     useEffect(() => {
-        const fetchLeaves = async () => {
-            try {
-                const response = await axios.get(
-                    "https://x8ki-letl-twmt.n7.xano.io/api:WVrFdUAc/cassandra_leaves",
-                    {
-                        params: {
-                            page_number: 1,
-                            offset: 8,
-                        },
+        const fetchAllLeaves = async () => {
+            let allLeaves = [];
+            let page = 1;
+            const offset = 8; // Number of items per page
+            const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+            const fetchPage = async (page) => {
+                try {
+                    const response = await axios.get(
+                        "https://x8ki-letl-twmt.n7.xano.io/api:WVrFdUAc/cassandra_leaves",
+                        {
+                            params: {
+                                page_number: page,
+                                offset: offset,
+                            },
+                        }
+                    );
+
+                    const items = response.data.items;
+                    if (items.length > 0) {
+                        allLeaves = [...allLeaves, ...items];
+                        setLeaves(allLeaves); // Update state after each page
+                        await delay(1000); // Delay of 1 second between requests
+                        await fetchPage(page + 1); // Fetch the next page
+                    } else {
+                        setLeaves(allLeaves); // Set the leaves state when done
                     }
-                );
-                setLeaves(response.data.items);
-            } catch (error) {
-                setError("Error fetching data");
-                console.error("Error fetching data from Xano:", error);
-            }
+                } catch (error) {
+                    if (error.response && error.response.status === 429) {
+                        console.warn("Rate limit exceeded. Retrying...");
+                        await delay(2000); // Delay of 2 seconds before retrying
+                        await fetchPage(page); // Retry the same page
+                    } else {
+                        setError("Error fetching data");
+                        console.error("Error fetching data from Xano:", error);
+                    }
+                }
+            };
+
+            await fetchPage(page);
         };
 
-        fetchLeaves();
+        fetchAllLeaves();
     }, []);
 
     // State to manage the form fields for adding or editing records
@@ -241,7 +255,7 @@ export default function Home({leavesData}) {
 
             {/* Modal for adding or editing a record */}
             {isModalOpen && (
-                <div className={styles.modal}>
+                <div className={`${styles.modal} ${styles.scrollableModal}`}>
                     <div className={styles.modalContent}>
                         <h2>{uiState.modalState.isEditing ? "Edit Record" : "Add New Record"}</h2>
                         <input
@@ -301,7 +315,7 @@ export default function Home({leavesData}) {
                             onChange={handleInputChange}
                         />
                         <input
-                            type="text"                      //not sure about the type i need an array
+                            type="text"
                             name="tags[]"
                             placeholder="Tags"
                             value={formState.tags}
@@ -385,7 +399,7 @@ export default function Home({leavesData}) {
 
             {/* Modal for delete confirmation */}
             {isDeleteModalOpen && (
-                <div className={styles.modal}>
+                <div className={`${styles.modal} ${styles.nonScrollableModal}`}>
                     <div className={styles.modalContent}>
                         <h2>Confirm Deletion</h2>
                         <p>Are you sure you want to delete this record?</p>
