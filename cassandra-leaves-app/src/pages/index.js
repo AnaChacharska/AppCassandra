@@ -100,7 +100,7 @@ export default function Home({leavesData}) {
     const {isModalOpen: isDeleteModalOpen, openModal: openDeleteModal, closeModal: closeDeleteModal} = useModal();
 
     // Pagination settings
-    const itemsPerPage = 8;
+    const itemsPerPage = 16;
 
     // Memoized value to filter the leaves data based on the search query
     const filteredData = useMemo(() => {
@@ -123,6 +123,10 @@ export default function Home({leavesData}) {
             searchQuery: query,
             currentPage: 1, // Reset to the first page on new search
         }));
+    };
+
+    const handleGoUp = () => {
+        window.scrollTo({ top: 0, behavior: "smooth" });
     };
 
     // Handles changes in form input fields
@@ -450,6 +454,9 @@ export default function Home({leavesData}) {
                 >
                     Next
                 </button>
+            </div>
+            <div className={styles.goUpButton} onClick={handleGoUp}>
+                <img src="/up-chevron_8213555.png" alt="Go to top" />
             </div>
         </div>
     );
