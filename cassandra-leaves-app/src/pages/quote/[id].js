@@ -1,13 +1,52 @@
 import { useRouter } from "next/router";
-import {useEffect, useState} from "react";
+import { useEffect, useState } from "react";
+import axios from "axios";
 
-export default function QuoteDetail({ leavesData }) {
+export default function QuoteDetail() {
     const router = useRouter();
     const { id } = router.query;
     const [isDarkMode, setIsDarkMode] = useState(false);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+    const [record, setRecord] = useState(null);
 
+    useEffect(() => {
+        if (!id) {
+            console.error("ID is not available");
+            return; // Avoid fetching if id is not available yet
+        }
+        const fetchRecord = async () => {
+            let retries = 3;
+            const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
-    const record = leavesData.find((item) => String(item.id) === String(id));
+            while (retries > 0) {
+                try {
+                    setLoading(true);
+                    const response = await axios.get(
+                        `https://x8ki-letl-twmt.n7.xano.io/api:WVrFdUAc/cassandra_leaves/${id}`
+                    );
+                    setRecord(response.data);
+                    setError(null); // Clear any previous errors
+                    setLoading(false);
+                    return;
+                } catch (err) {
+                    if (err.response && err.response.status === 429) {
+                        retries -= 1;
+                        await delay(2000 * (3 - retries)); // Exponential backoff
+                    } else {
+                        console.error("Error fetching record:", err);
+                        setError("Failed to load the record. Please try again.");
+                        setLoading(false);
+                        return;
+                    }
+                }
+            }
+            setError("Rate limit exceeded. Please try again later.");
+            setLoading(false);
+        };
+
+        fetchRecord();
+    }, [id]);
 
     useEffect(() => {
         const savedMode = localStorage.getItem("darkMode") === "true";
@@ -28,6 +67,22 @@ export default function QuoteDetail({ leavesData }) {
             }
         };
     }, []);
+
+    if (loading) {
+        return <div>Loading...</div>;
+    }
+
+    if (error) {
+        return (
+            <div className="container">
+                <div className="back-button" onClick={() => router.push("/")}>
+                    Back
+                </div>
+                <h1 className="title">Error</h1>
+                <p>{error}</p>
+            </div>
+        );
+    }
 
     if (!record) {
         return (
@@ -112,14 +167,13 @@ export default function QuoteDetail({ leavesData }) {
                 box-sizing: border-box;
                 align-items: center;
               }
-                  .dark {
-                    background-color: #123733;
-                    //color: white;
-                  }
+              .dark {
+                background-color: #123733;
+              }
               .dark .title{
                 color: #ededed;
               }
-              
+
               .toggle-container {
                 position: absolute;
                 top: 20px;
@@ -183,15 +237,15 @@ export default function QuoteDetail({ leavesData }) {
               }
               .header-container {
                 width: 100%;
-                max-width: 1000px; 
-                padding-left: 0; 
+                max-width: 1000px;
+                padding-left: 0;
               }
               .title {
-                margin-top: 70px; 
+                margin-top: 70px;
                 font-size: 4.5rem;
                 font-weight: 700;
                 color: black;
-                width: 100%; 
+                width: 100%;
                 margin-bottom: 10px;
               }
               .details {
@@ -263,124 +317,123 @@ export default function QuoteDetail({ leavesData }) {
                 width: 100%;
                 height: 100%;
               }
-              
+
               h2 {
                 color: lightslategray;
                 font-weight: 100;
-                margin-bottom: 20px; 
-                width: 100%; 
+                margin-bottom: 20px;
+                width: 100%;
                 transition: color 0.3s;
               }
               h2:hover {
                 color: white;
                 font-weight: 300;
-                cursor: pointer; 
-                
+                cursor: pointer;
               }
               .tag-cloud {
                 margin-top: 20px;
                 display: flex;
                 flex-wrap: wrap;
                 gap: 10px;
-                justify-content: center; 
+                justify-content: center;
                 align-items: center;
                 text-align: center;
                 position: relative;
               }
 
               .tag-cloud::after {
-                content: ""; 
+                content: "";
                 display: block;
-                width: 100%; 
+                width: 100%;
                 height: 0.5px;
                 background-color: #ccc;
-                margin-top: 20px; 
+                margin-top: 20px;
               }
               .tag {
-                background: #e8fbf8; 
-                border: 1px solid #ccc; 
+                background: #e8fbf8;
+                border: 1px solid #ccc;
                 border-radius: 20px;
                 padding: 5px 15px;
                 font-size: 1rem;
                 font-weight: lighter;
                 color: gray;
                 transition: background 0.3s ease, color 0.3s ease;
-                cursor: pointer; 
+                cursor: pointer;
               }
 
               .tag:hover {
-                color: #000; 
-                border-color: black; 
+                color: #000;
+                border-color: black;
               }
               {
-                .title {
-                  margin-top: 30px; 
-                  font-size: 2.5rem;
-                }
-                .header-container {
-                  padding-left: 10px;
-                }
-                .details {
-                  padding: 10px;
-                  margin-top: 10px;
-                  width: 100%;
-                }
-                .content {
-                  padding: 10px;
-                  margin-top: 10px;
-                  margin-bottom: 10px;
-                }
-                .back-button {
-                  top: 10px;
-                  left: 10px;
-                }
-                .home-icon {
-                  width: 30px;
-                  height: 30px;
-                }
-                .go-top-button {
-                  width: 30px;
-                  height: 30px;
-                }
+              .title {
+                margin-top: 30px;
+                font-size: 2.5rem;
+              }
+              .header-container {
+                padding-left: 10px;
+              }
+              .details {
+                padding: 10px;
+                margin-top: 10px;
+                width: 100%;
+              }
+              .content {
+                padding: 10px;
+                margin-top: 10px;
+                margin-bottom: 10px;
+              }
+              .back-button {
+                top: 10px;
+                left: 10px;
+              }
+              .home-icon {
+                width: 30px;
+                height: 30px;
+              }
+              .go-top-button {
+                width: 30px;
+                height: 30px;
+              }
               .user-info {
-                display: grid; 
-                gap: 20px; 
+                display: grid;
+                gap: 20px;
                 place-items: center;
                 margin-top: 20px;
                 padding-bottom: 30px;
               }
               .info-item {
                 display: inline-flex;
-                align-items: center; 
-                gap: 8px;   
+                align-items: center;
+                gap: 8px;
               }
 
               .icon {
-                width: 16px; 
+                width: 16px;
                 height: 16px;
-                display: block; 
-                object-fit: contain; 
+                display: block;
+                object-fit: contain;
               }
 
               .info-text {
                 font-size: 14px;
-                line-height: 1.2; 
-                vertical-align: middle; 
+                line-height: 1.2;
+                vertical-align: middle;
               }
 
               @media (max-width: 768px) {
                 .user-info {
-                  gap: 15px; 
+                  gap: 15px;
                 }
               }
               }
               .info-table-container {
                 display: flex;
                 flex-direction: column;
-                gap: 15px; 
+                gap: 15px;
                 width: 100%;
                 max-width: 600px;
-                margin: 30px auto; 
+                margin: 30px auto;
                 font-family: 'Poppins', sans-serif;
               }
 
@@ -389,15 +442,15 @@ export default function QuoteDetail({ leavesData }) {
                 justify-content: space-between;
                 align-items: center;
                 padding: 15px 20px;
-                background-color: #e8fbf8; 
-                border-radius: 30px; 
+                background-color: #e8fbf8;
+                border-radius: 30px;
                 box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
                 font-weight: 600;
                 color: #333;
               }
 
               .info-row:nth-child(even) {
-                background-color: #d6f5f2; 
+                background-color: #d6f5f2;
               }
 
               .info-label {
@@ -413,7 +466,7 @@ export default function QuoteDetail({ leavesData }) {
 
               @media (max-width: 768px) {
                 .info-row {
-                  flex-direction: column; 
+                  flex-direction: column;
                   padding: 10px 15px;
                 }
                 .info-label, .info-value {
@@ -423,26 +476,4 @@ export default function QuoteDetail({ leavesData }) {
             `}</style>
         </div>
     );
-}
-
-export async function getStaticProps() {
-    const leavesData = require("../../data/leaves.json");
-    return {
-        props: {
-            leavesData,
-        },
-    };
-}
-
-export async function getStaticPaths() {
-    const leavesData = require("../../data/leaves.json");
-
-    const paths = leavesData.map((item) => ({
-        params: { id: item.id.toString() },
-    }));
-
-    return {
-        paths,
-        fallback: false,
-    };
 }
