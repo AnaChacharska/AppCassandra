@@ -20,66 +20,68 @@ export default function Home({ leavesData }) {
             isDeleteModalOpen: false,
         },
     });
-
     // In-memory cache for API responses
     const cache = {};
 
     // Fetch data from Xano on component mount
     useEffect(() => {
-        setLeaves(leavesData);
-        const fetchAllLeaves = async () => {
-            let allLeaves = [];
-            let page = 1;
-            const offset = 0;
-            const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+        if (leaves.length === 0 && leavesData.length > 0) {
+            setLeaves(leavesData);
+        } else if (leaves.length === 0) {
+            const fetchAllLeaves = async () => {
+                let allLeaves = [];
+                let page = 1;
+                const offset = 0;
+                const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
-            const fetchPage = async (page) => {
-                if (cache[page]) {
-                    return cache[page];
-                }
-                try {
-                    const response = await axios.get(
-                        "https://x8ki-letl-twmt.n7.xano.io/api:WVrFdUAc/cassandra_leaves",
-                        {
-                            params: {
-                                page_number: page,
-                                offset: offset,
-                            },
-                        }
-                    );
-
-                    const items = response.data.items;
-                    cache[page] = items; // Store the response in cache
-                    return items;
-                } catch (error) {
-                    if (error.response && error.response.status === 429) {
-                        console.warn("Rate limit exceeded. Retrying...");
-                        await delay(2000); // Delay of 2 seconds before retrying
-                        return await fetchPage(page); // Retry the same page
-                    } else {
-                        setError("Error fetching data");
-                        console.error("Error fetching data from Xano:", error);
-                        return [];
+                const fetchPage = async (page, retries = 5, delayMs = 1000) => {
+                    if (cache[page]) {
+                        return cache[page];
                     }
+                    try {
+                        const response = await axios.get(
+                            "https://x8ki-letl-twmt.n7.xano.io/api:WVrFdUAc/cassandra_leaves",
+                            {
+                                params: {
+                                    page_number: page,
+                                    offset: offset,
+                                },
+                            }
+                        );
+
+                        const items = response.data.items;
+                        cache[page] = items;
+                        return items;
+                    } catch (error) {
+                        if (error.response && error.response.status === 429 && retries > 0) {
+                            console.warn(`Rate limit exceeded. Retrying in ${delayMs}ms...`);
+                            await delay(delayMs);
+                            return await fetchPage(page, retries - 1, delayMs * 2); // Exponential backoff
+                        } else {
+                            setError("Error fetching data");
+                            console.error("Error fetching data from Xano:", error);
+                            return [];
+                        }
+                    }
+                };
+
+                try {
+                    while (true) {
+                        const items = await fetchPage(page);
+                        if (items.length === 0) break;
+                        allLeaves = [...allLeaves, ...items];
+                        setLeaves(allLeaves);
+                        await delay(1000);
+                        page++;
+                    }
+                } catch (error) {
+                    setError(error.message);
                 }
             };
 
-            try {
-                while (true) {
-                    const items = await fetchPage(page);
-                    if (items.length === 0) break;
-                    allLeaves = [...allLeaves, ...items];
-                    setLeaves(allLeaves); // Update state after each page
-                    await delay(1000); // Delay of 1 second between requests
-                    page++;
-                }
-            } catch (error) {
-                setError(error.message);
-            }
-        };
-
-        fetchAllLeaves();
-    }, [leavesData, setLeaves]);
+            fetchAllLeaves();
+        }
+    }, [leavesData, leaves, setLeaves]);
 
     // State to manage the form fields for adding or editing records
     const [formState, setFormState] = useState({
@@ -113,7 +115,7 @@ export default function Home({ leavesData }) {
     const { isModalOpen: isDeleteModalOpen, openModal: openDeleteModal, closeModal: closeDeleteModal } = useModal();
 
     // Pagination settings
-    const itemsPerPage = 16;
+    const itemsPerPage = 32;
 
     // Memoized value to filter the leaves data based on the search query
     const filteredData = useMemo(() => {
@@ -475,7 +477,6 @@ export default function Home({ leavesData }) {
         </div>
     );
 }
-
 // Static data fetching function to get leaves data
 export async function getStaticProps() {
     try {
