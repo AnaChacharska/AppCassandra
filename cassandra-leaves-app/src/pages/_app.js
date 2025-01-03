@@ -1,16 +1,14 @@
-import React, { createContext, useState } from "react";
-import "../app/globals.css";
-
-export const GlobalContext = createContext();
+import { DarkModeProvider } from "../contexts/DarkModeContext";
+import { GlobalProvider } from "../contexts/GlobalContext";
+// import "../styles/globals.css";
 
 function MyApp({ Component, pageProps }) {
-    const [leavesData, setLeavesData] = useState([]);
-
     return (
-        <GlobalContext.Provider value={{ leavesData, setLeavesData }}>
-            <Component {...pageProps} />
-        </GlobalContext.Provider>
+        <DarkModeProvider>
+            <GlobalProvider initialLeavesData={pageProps.leavesData}>
+                <Component {...pageProps} />
+            </GlobalProvider>
+        </DarkModeProvider>
     );
 }
-
 export default MyApp;

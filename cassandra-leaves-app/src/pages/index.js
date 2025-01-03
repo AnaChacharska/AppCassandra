@@ -1,288 +1,615 @@
-import Link from "next/link";
-import { useState } from "react";
+import { useState, useMemo, useEffect, useContext } from "react";
+import { useModal, useDarkMode } from "../hooks/useModal"; // Custom hooks for managing modal and dark mode
+import Card from "../components/Card"; // Reusable Card component to display data
+import styles from "./Home.module.css"; // CSS module for styling
+import axios from "axios";
+import { GlobalContext } from "../contexts/GlobalContext";
 
 export default function Home({ leavesData }) {
-    const [filteredData, setFilteredData] = useState(leavesData || []); // Default to an empty array
-    const [searchQuery, setSearchQuery] = useState("");
-    const [currentPage, setCurrentPage] = useState(1);
-    const itemsPerPage = 10;
+    const {leaves, setLeaves} = useContext(GlobalContext);
+    const [error, setError] = useState("");
 
-    const [formState, setFormState] = useState({ id: "", title: "", domain_name: "" });
-    const [isEditing, setIsEditing] = useState(false);
+    // State to manage UI-specific details like search, pagination, and modal
+    const [uiState, setUiState] = useState({
+        searchQuery: "",
+        currentPage: 1,
+        modalState: {
+            isEditing: false,
+            successMessage: "",
+            deleteRecord: null,
+            isDeleteModalOpen: false,
+        },
+    });
+    // In-memory cache for API responses
+    const cache = {};
 
-    // Handle search
-    const handleSearch = (query) => {
-        setSearchQuery(query);
-        const lowerCaseQuery = query.toLowerCase();
-        const filtered = leavesData.filter((item) =>
-            item.title.toLowerCase().includes(lowerCaseQuery)
+    // Fetch data from Xano on component mount
+    useEffect(() => {
+        if (leaves.length === 0 && leavesData.length > 0) {
+            setLeaves(leavesData);
+        } else if (leaves.length === 0) {
+            const fetchAllLeaves = async () => {
+                let allLeaves = [];
+                let page = 1;
+                const offset = 0;
+                const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+                const fetchPage = async (page, retries = 5, delayMs = 1000) => {
+                    if (cache[page]) {
+                        return cache[page];
+                    }
+                    try {
+                        const response = await axios.get(
+                            "https://x8ki-letl-twmt.n7.xano.io/api:WVrFdUAc/cassandra_leaves",
+                            {
+                                params: {
+                                    page_number: page,
+                                    offset: offset,
+                                },
+                            }
+                        );
+
+                        const items = response.data.items;
+                        cache[page] = items;
+                        return items;
+                    } catch (error) {
+                        if (error.response && error.response.status === 429 && retries > 0) {
+                            console.warn(`Rate limit exceeded. Retrying in ${delayMs}ms...`);
+                            await delay(delayMs);
+                            return await fetchPage(page, retries - 1, delayMs * 2); // Exponential backoff
+                        } else {
+                            setError("Error fetching data");
+                            console.error("Error fetching data from Xano:", error);
+                            return [];
+                        }
+                    }
+                };
+
+                try {
+                    while (true) {
+                        const items = await fetchPage(page);
+                        if (items.length === 0) break;
+                        allLeaves = [...allLeaves, ...items];
+                        setLeaves(allLeaves);
+                        await delay(1000);
+                        page++;
+                    }
+                } catch (error) {
+                    setError(error.message);
+                }
+            };
+
+            fetchAllLeaves();
+        }
+    }, [leavesData, leaves, setLeaves]);
+
+    // State to manage the form fields for adding or editing records
+    const [formState, setFormState] = useState({
+        content: "",
+        domain_name: "",
+        http_status: "",
+        language: "",
+        last_sourced_from_wallabag: "",
+        mimetype: "",
+        preview_picture: "",
+        published_by: "",
+        tags: "",
+        title: "",
+        updated_at: "",
+        url: "",
+        user_email: "",
+        user_id: "",
+        user_name: "",
+        wallabag_created_at: "",
+        wallabag_is_archived: "",
+        wallabag_updated_at: "",
+    });
+
+    // Custom hook to manage dark mode functionality
+    const {isDarkMode, toggleDarkMode} = useDarkMode();
+
+    // Custom hook to manage the modal state for adding/editing records
+    const {isModalOpen, openModal, closeModal} = useModal();
+
+    // Custom hook to manage the modal state for delete confirmation
+    const {isModalOpen: isDeleteModalOpen, openModal: openDeleteModal, closeModal: closeDeleteModal} = useModal();
+
+    // Pagination settings
+    const itemsPerPage = 32;
+
+    // Memoized value to filter the leaves data based on the search query
+    const filteredData = useMemo(() => {
+        return (leaves || []).filter((item) =>
+            item.title.toLowerCase().includes(uiState.searchQuery.toLowerCase())
         );
-        setFilteredData(filtered);
-        setCurrentPage(1); // Reset to the first page on search
+    }, [leaves, uiState.searchQuery]);
+
+    // Calculate the total number of pages based on filtered data
+    const totalPages = Math.ceil(filteredData.length / itemsPerPage);
+
+    // Slice the data to show only the records for the current page
+    const startIndex = (uiState.currentPage - 1) * itemsPerPage;
+    const paginatedData = filteredData.slice(startIndex, startIndex + itemsPerPage);
+
+    // Handles updating the search query and resets pagination
+    const handleSearch = (query) => {
+        setUiState((prevState) => ({
+            ...prevState,
+            searchQuery: query,
+            currentPage: 1, // Reset to the first page on new search
+        }));
     };
 
-    // Handle form input changes
+    const handleGoUp = () => {
+        window.scrollTo({top: 0, behavior: "smooth"});
+    };
+
+    // Handles changes in form input fields
     const handleInputChange = (e) => {
-        const { name, value } = e.target;
-        setFormState({ ...formState, [name]: value });
+        const {name, value} = e.target;
+        setFormState((prevState) => ({
+            ...prevState,
+            [name]: value,
+        }));
     };
 
-    // Add a new record
-    const handleAddRecord = () => {
+    // Adds a new record to the list
+    const handleAddRecord = async () => {
         if (!formState.title || !formState.domain_name) {
             alert("Please fill out all fields.");
             return;
         }
 
         const newRecord = {
-            id: filteredData.length + 1, // Generate a new ID
             title: formState.title,
             domain_name: formState.domain_name,
+            content: formState.content,
+            http_status: formState.http_status,
+            language: formState.language,
+            last_sourced_from_wallabag: formState.last_sourced_from_wallabag,
+            mimetype: formState.mimetype,
+            preview_picture: formState.preview_picture,
+            published_by: formState.published_by,
+            tags: formState.tags,
+            updated_at: formState.updated_at,
+            url: formState.url,
+            user_email: formState.user_email,
+            user_id: formState.user_id,
+            user_name: formState.user_name,
+            wallabag_created_at: formState.wallabag_created_at,
+            wallabag_is_archived: formState.wallabag_is_archived,
+            wallabag_updated_at: formState.wallabag_updated_at,
         };
 
-        setFilteredData([...filteredData, newRecord]);
-        setFormState({ id: "", title: "", domain_name: "" });
+        try {
+            const response = await axios.post("https://x8ki-letl-twmt.n7.xano.io/api:WVrFdUAc/cassandra_leaves", newRecord);
+            if (response.status === 200) {
+                const addedRecord = response.data;
+                setLeaves((prevLeaves) => [addedRecord, ...prevLeaves]); // Add the new record to the top of the list
+                setFormState({
+                    content: "",
+                    domain_name: "",
+                    http_status: "",
+                    language: "",
+                    last_sourced_from_wallabag: "",
+                    mimetype: "",
+                    preview_picture: "",
+                    published_by: "",
+                    tags: "",
+                    title: "",
+                    updated_at: "",
+                    url: "",
+                    user_email: "",
+                    user_id: "",
+                    user_name: "",
+                    wallabag_created_at: "",
+                    wallabag_is_archived: "",
+                    wallabag_updated_at: "",
+                }); // Reset the form state
+                closeModal(); // Close the modal
+                setUiState((prevState) => ({
+                    ...prevState,
+                    modalState: { ...prevState.modalState, successMessage: "Record added successfully!" },
+                }));
+
+                // Clear the success message after 3 seconds
+                setTimeout(() => {
+                    setUiState((prevState) => ({
+                        ...prevState,
+                        modalState: { ...prevState.modalState, successMessage: "" },
+                    }));
+                }, 3000);
+            } else {
+                console.error("Failed to add record to Xano");
+            }
+        } catch (error) {
+            console.error("Error adding record to Xano:", error);
+        }
+    };
+    const editRecordInXano = async (recordId, updatedData) => {
+        try {
+            const url = `https://x8ki-letl-twmt.n7.xano.io/api:WVrFdUAc/cassandra_leaves/${recordId}`;
+            console.log(`Updating record at URL: ${url}`);
+            console.log(`Record ID: ${recordId}`);
+            console.log(`Updated Data:`, updatedData);
+            const response = await axios.put(url, updatedData);
+            if (response.status === 200) {
+                console.log('Record updated successfully in Xano');
+            } else {
+                console.error('Failed to update record in Xano');
+            }
+        } catch (error) {
+            console.error('Error updating record in Xano:', error);
+        }
     };
 
-    // Edit a record
+// Prepares the form state for editing an existing record
     const handleEdit = (record) => {
-        setIsEditing(true);
-        setFormState(record);
+        setFormState(record); // Set the form state with the record's data
+        setUiState((prevState) => ({
+            ...prevState,
+            modalState: {
+                ...prevState.modalState,
+                isEditing: true,
+            },
+        }));
+        openModal(); // Open the modal
     };
 
-    const handleUpdateRecord = () => {
-        const updatedData = filteredData.map((item) =>
+// Updates the existing record in the list
+    const handleUpdateRecord = async () => {
+        const updatedLeaves = leaves.map((item) =>
             item.id === formState.id ? formState : item
         );
 
-        setFilteredData(updatedData);
-        setIsEditing(false);
-        setFormState({ id: "", title: "", domain_name: "" });
+        setLeaves(updatedLeaves); // Update the list with the modified record
+        await editRecordInXano(formState.id, formState); // Update the record in Xano
+        setFormState({
+            id: "",
+            content: "",
+            domain_name: "",
+            http_status: "",
+            language: "",
+            last_sourced_from_wallabag: "",
+            mimetype: "",
+            preview_picture: "",
+            published_by: "",
+            tags: "",
+            title: "",
+            updated_at: "",
+            url: "",
+            user_email: "",
+            user_id: "",
+            user_name: "",
+            wallabag_created_at: "",
+            wallabag_is_archived: "",
+            wallabag_updated_at: "",
+        }); // Reset the form state
+        closeModal(); // Close the modal
+        setUiState((prevState) => ({
+            ...prevState,
+            modalState: {
+                ...prevState.modalState,
+                isEditing: false,
+                successMessage: "Record updated successfully!",
+            },
+        }));
+
+        // Clear the success message after 3 seconds
+        setTimeout(() => {
+            setUiState((prevState) => ({
+                ...prevState,
+                modalState: { ...prevState.modalState, successMessage: "" },
+            }));
+        }, 3000);
     };
 
-    // Delete a record
-    const handleDelete = (id) => {
-        const updatedData = filteredData.filter((item) => item.id !== id);
-        setFilteredData(updatedData);
-        alert("Record deleted successfully.");
-    };
+        const deleteRecordFromXano = async (recordId) => {
+            try {
+                const response = await axios.delete(`https://x8ki-letl-twmt.n7.xano.io/api:WVrFdUAc/cassandra_leaves/${recordId}`);
+                if (response.status === 200) {
+                    console.log('Record deleted successfully from Xano');
+                } else {
+                    console.error('Failed to delete record from Xano');
+                }
+            } catch (error) {
+                console.error('Error deleting record from Xano:', error);
+            }
+        };
 
-    // Pagination logic
-    const totalPages = Math.ceil((filteredData?.length || 0) / itemsPerPage);
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    const paginatedData = filteredData.slice(startIndex, startIndex + itemsPerPage);
+        // Opens the delete confirmation modal
+        const handleDelete = (id) => {
+            setUiState((prevState) => ({
+                ...prevState,
+                modalState: {...prevState.modalState, deleteRecord: id},
+            }));
+            openDeleteModal(); // Open the delete confirmation modal
+        };
 
-    return (
-        <div className="container">
-            <h1 className="title">Cassandra Leaves Dashboard</h1>
+        // Confirms the deletion of a record
+        const confirmDelete = async () => {
+            const recordId = uiState.modalState.deleteRecord;
+            const updatedLeaves = leaves.filter((item) => item.id !== recordId);
+            setLeaves(updatedLeaves); // Remove the record from the list
+            await deleteRecordFromXano(recordId); // Delete the record from Xano
+            closeDeleteModal(); // Close the delete confirmation modal
+            alert("Record deleted successfully.");
+        };
 
-            {/* Search Bar */}
-            <input
-                type="text"
-                placeholder="Search by title..."
-                value={searchQuery}
-                onChange={(e) => handleSearch(e.target.value)}
-                className="search-bar"
-            />
+        return (
+            <div className={`${styles.container} ${isDarkMode ? styles.dark : ""}`}>
+                <h1 className={styles.title}>Cassandra Leaves Dashboard</h1>
 
-            {/* Form */}
-            <div className="form">
-                <input
-                    type="text"
-                    name="title"
-                    placeholder="Title"
-                    value={formState.title}
-                    onChange={handleInputChange}
-                />
-                <input
-                    type="text"
-                    name="domain_name"
-                    placeholder="Domain"
-                    value={formState.domain_name}
-                    onChange={handleInputChange}
-                />
-                {isEditing ? (
-                    <button onClick={handleUpdateRecord}>Update Record</button>
-                ) : (
-                    <button onClick={handleAddRecord}>Add Record</button>
+                {/* Display success message */}
+                {uiState.modalState.successMessage && (
+                    <div className={styles.successMessage}>{uiState.modalState.successMessage}</div>
                 )}
+
+                {/* Toggle for dark mode */}
+                <div className={styles.toggleContainer}>
+                    <label className={styles.toggleSwitch}>
+                        <input
+                            type="checkbox"
+                            checked={isDarkMode}
+                            onChange={toggleDarkMode}
+                        />
+                        <span className={styles.slider}></span>
+                    </label>
+                </div>
+
+                {/* Search bar and Add Record button */}
+                <div className={styles.searchAddContainer}>
+                    <input
+                        type="text"
+                        placeholder="Search by title..."
+                        value={uiState.searchQuery}
+                        onChange={(e) => handleSearch(e.target.value)}
+                        className={styles.searchBar}
+                    />
+                    <button className={styles.addButton} onClick={openModal}>
+                        Add Record
+                    </button>
+                </div>
+
+                {/* Modal for adding or editing a record */}
+                {isModalOpen && (
+                    <div className={`${styles.modal} ${styles.scrollableModal}`}>
+                        <div className={styles.modalContent}>
+                            <h2>{uiState.modalState.isEditing ? "Edit Record" : "Add New Record"}</h2>
+                            <input
+                                type="text"
+                                name="content"
+                                placeholder="Content"
+                                value={formState.content}
+                                onChange={handleInputChange}
+                            />
+                            <input
+                                type="text"
+                                name="domain_name"
+                                placeholder="Domain"
+                                value={formState.domain_name}
+                                onChange={handleInputChange}
+                            />
+                            <input
+                                type="number"
+                                name="http_status"
+                                placeholder="Http Status"
+                                value={formState.http_status}
+                                onChange={handleInputChange}
+                            />
+                            <input
+                                type="text"
+                                name="language"
+                                placeholder="Language"
+                                value={formState.language}
+                                onChange={handleInputChange}
+                            />
+                            <input
+                                type="date"
+                                name="last_sourced_from_wallabag"
+                                placeholder="Last sourced"
+                                value={formState.last_sourced_from_wallabag}
+                                onChange={handleInputChange}
+                            />
+                            <input
+                                type="text"
+                                name="mimetype"
+                                placeholder="Mimetype"
+                                value={formState.mimetype}
+                                onChange={handleInputChange}
+                            />
+                            <input
+                                type="image"
+                                name="preview_picture"
+                                placeholder="Preview picture"
+                                value={formState.preview_picture}
+                                onChange={handleInputChange}
+                                alt="Preview picture"
+                            />
+                            <input
+                                type="text"
+                                name="published_by"
+                                placeholder="Published by"
+                                value={formState.published_by}
+                                onChange={handleInputChange}
+                            />
+                            <input
+                                type="text"
+                                name="tags[]"
+                                placeholder="Tags"
+                                value={formState.tags}
+                                onChange={handleInputChange}
+                            />
+                            <input
+                                type="text"
+                                name="title"
+                                placeholder="Title"
+                                value={formState.title}
+                                onChange={handleInputChange}
+                            />
+                            <input
+                                type="date"
+                                name="updated_at"
+                                placeholder="Updated at"
+                                value={formState.updated_at}
+                                onChange={handleInputChange}
+                            />
+                            <input
+                                type="text"
+                                name="url"
+                                placeholder="Url"
+                                value={formState.url}
+                                onChange={handleInputChange}
+                            />
+                            <input
+                                type="text"
+                                name="user_email"
+                                placeholder="User email"
+                                value={formState.user_email}
+                                onChange={handleInputChange}
+                            />
+                            <input
+                                type="text"
+                                name="user_id"
+                                placeholder="User id"
+                                value={formState.user_id}
+                                onChange={handleInputChange}
+                            />
+                            <input
+                                type="text"
+                                name="user_name"
+                                placeholder="User name"
+                                value={formState.user_name}
+                                onChange={handleInputChange}
+                            />
+                            <input
+                                type="date"
+                                name="wallabag_created_at"
+                                placeholder="Wallabag created at"
+                                value={formState.wallabag_created_at}
+                                onChange={handleInputChange}
+                            />
+                            <input
+                                type="text"
+                                name="wallabag_is_archived"
+                                placeholder="Wallabag is archived"
+                                value={formState.wallabag_is_archived}
+                                onChange={handleInputChange}
+                            />
+                            <input
+                                type="date"
+                                name="wallabag_updated_at"
+                                placeholder="Wallabag updated at"
+                                value={formState.wallabag_updated_at}
+                                onChange={handleInputChange}
+                            />
+
+                            <div className={styles.modalActions}>
+                                {uiState.modalState.isEditing ? (
+                                    <button onClick={handleUpdateRecord}>Update</button>
+                                ) : (
+                                    <button onClick={handleAddRecord}>Add</button>
+                                )}
+                                <button onClick={closeModal}>Cancel</button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* Modal for delete confirmation */}
+                {isDeleteModalOpen && (
+                    <div className={`${styles.modal} ${styles.nonScrollableModal}`}>
+                        <div className={styles.modalContent}>
+                            <h2>Confirm Deletion</h2>
+                            <p>Are you sure you want to delete this record?</p>
+                            <div className={styles.modalActions}>
+                                <button onClick={confirmDelete}>Yes, Delete</button>
+                                <button onClick={closeDeleteModal}>Cancel</button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* Display the records using the Card component */}
+                <div className={styles.grid}>
+                    {paginatedData.map((item) => (
+                        <Card
+                            key={item.id}
+                            item={item}
+                            onEdit={handleEdit}
+                            onDelete={handleDelete}
+                        />
+                    ))}
+                </div>
+
+                {/* Pagination controls */}
+                <div className={styles.pagination}>
+                    <button
+                        onClick={() =>
+                            setUiState((prevState) => ({
+                                ...prevState,
+                                currentPage: Math.max(prevState.currentPage - 1, 1),
+                            }))
+                        }
+                        disabled={uiState.currentPage === 1}
+                    >
+                        Previous
+                    </button>
+                    <span>
+                    Page {uiState.currentPage} of {totalPages}
+                </span>
+                    <button
+                        onClick={() =>
+                            setUiState((prevState) => ({
+                                ...prevState,
+                                currentPage: Math.min(prevState.currentPage + 1, totalPages),
+                            }))
+                        }
+                        disabled={uiState.currentPage === totalPages}
+                    >
+                        Next
+                    </button>
+                </div>
+                <div className={styles.goUpButton} onClick={handleGoUp}>
+                    <img src="/up-chevron_8213555.png" alt="Go to top"/>
+                </div>
             </div>
+        );
+    }
 
-            {/* Table */}
-            <table>
-                <thead>
-                <tr>
-                    <th>ID</th>
-                    <th>Title</th>
-                    <th>Domain</th>
-                    <th>Actions</th>
-                </tr>
-                </thead>
-                <tbody>
-                {paginatedData.map((item) => (
-                    <tr key={item.id}>
-                        <td>{item.id}</td>
-                        <td dangerouslySetInnerHTML={{ __html: item.title }}></td>
-                        <td>{item.domain_name}</td>
-                        <td>
-                            <button onClick={() => handleEdit(item)}>Edit</button>
-                            <button onClick={() => handleDelete(item.id)}>Delete</button>
-                            <Link href={`/quote/${item.id}`}>
-                                <button>View</button>
-                            </Link>
-                        </td>
-                    </tr>
-                ))}
-                </tbody>
-            </table>
+// Static data fetching function to get leaves data
+    export async function getStaticProps() {
+        try {
+            let allLeaves = [];
+            let page = 1;
+            const offset = 0;
 
-            {/* Pagination */}
-            <div className="pagination">
-                <button
-                    onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-                    disabled={currentPage === 1}
-                >
-                    Previous
-                </button>
-                <span>
-          Page {currentPage} of {totalPages}
-        </span>
-                <button
-                    onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
-                    disabled={currentPage === totalPages}
-                >
-                    Next
-                </button>
-            </div>
+            while (true) {
+                const response = await axios.get("https://x8ki-letl-twmt.n7.xano.io/api:WVrFdUAc/cassandra_leaves", {
+                    params: {
+                        page_number: page,
+                        offset: offset,
+                    },
+                });
 
-            <style jsx>{`
-              @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@500;700&family=DM+Sans&display=swap');
+                const items = response.data.items;
+                if (items.length === 0) break;
 
-              .container {
-                padding: 40px;
-                background: url('Screenshot 2024-12-13 124659.png') no-repeat center center;
-                background-size: cover;
-                color: #1b1c1d;
-                font-family: 'Poppins', sans-serif;
-                min-height: 100vh;
-                display: flex;
-                flex-direction: column;
-              }
-              .title {
-                font-size: 2.8rem;
-                font-weight: 700;
-                text-align: center;
-                margin-bottom: 20px;
-                color: #1b1c1d;
-              }
-              .search-bar {
-                margin-bottom: 20px;
-                padding: 12px;
-                width: 100%;
-                font-size: 1rem;
-                border: 1px solid #d0d4d8;
-                border-radius: 5px;
-                color: #848d97;
-              }
-              .form {
-                margin-bottom: 20px;
-                display: flex;
-                gap: 15px;
-                justify-content: center;
-              }
-              .form input {
-                padding: 12px;
-                font-size: 1rem;
-                border: 1px solid #d0d4d8;
-                border-radius: 5px;
-                width: 200px;
-                color: #848d97;
-              }
-              .form button {
-                padding: 12px 40px;
-                font-size: 1rem;
-                color: white;
-                background: #848d97;
-                border-radius: 5px;
-                cursor: pointer;
-                transition: 0.3s ease;
-              }
-              .form button:hover {
-                background: #1b1c1d;
-              }
-              table {
-                width: 100%;
-                margin-top: 20px;
-                border-collapse: collapse;
-                border: 1px solid #d0d4d8;
-                border-radius: 5px;
-                overflow: hidden;
-                background-color: rgba(255, 255, 255, 0.6);
-              }
-              th,
-              td {
-                padding: 15px;
-                text-align: left;
-                border-bottom: 1px solid #d0d4d8;
-              }
-              th {
-                background-color: #e0e3e6;
-                font-weight: 500;
-              }
-              tr:nth-child(even) {
-                background: #f9f9f9;
-              }
-              tr:hover {
-                background: #e0e3e6;
-              }
-              .pagination {
-                margin-top: 20px;
-                display: flex;
-                justify-content: center;
-                gap: 15px;
-              }
-              .pagination button {
-                padding: 12px 20px;
-                font-size: 1rem;
-                color: white;
-                background: #848d97;
-                border-radius: 5px;
-                cursor: pointer;
-                transition: 0.3s ease;
-              }
-              .pagination button:hover {
-                background: #1b1c1d;
-              }
-              .quoted-content {
-                margin-bottom: 20px;
-                background-color: rgba(255, 255, 255, 0.6);
-                padding: 40px;
-                border-radius: 10px;
-                color: #1b1c1d;
-              }
-              .quoted-content h2 {
-                margin-bottom: 10px;
-              }
-              .quoted-content button {
-                margin-top: 10px;
-                padding: 10px 15px;
-                background: #848d97;
-                border: none;
-                color: white;
-                border-radius: 5px;
-                cursor: pointer;
-              }
-            `}</style>
-        </div>
-    );
-}
+                allLeaves = [...allLeaves, ...items];
+                page++;
+            }
 
-// Load data from the JSON file
-export async function getStaticProps() {
-    const leavesData = require("../data/leaves.json");
-    return {
-        props: {
-            leavesData,
-        },
-    };
-}
+            return {
+                props: {
+                    leavesData: allLeaves,
+                },
+            };
+        } catch (error) {
+            console.error("Error fetching data from Xano:", error);
+            return {
+                props: {
+                    leavesData: [],
+                },
+            };
+        }
+    }
