@@ -220,6 +220,19 @@ export default function Home({ leavesData }) {
         }, 3000);
     };
 
+    const deleteRecordFromXano = async (recordId) => {
+        try {
+            const response = await axios.delete(`https://x8ki-letl-twmt.n7.xano.io/api:WVrFdUAc/cassandra_leaves/${recordId}`);
+            if (response.status === 200) {
+                console.log('Record deleted successfully from Xano');
+            } else {
+                console.error('Failed to delete record from Xano');
+            }
+        } catch (error) {
+            console.error('Error deleting record from Xano:', error);
+        }
+    };
+
     // Opens the delete confirmation modal
     const handleDelete = (id) => {
         setUiState((prevState) => ({
@@ -230,9 +243,11 @@ export default function Home({ leavesData }) {
     };
 
     // Confirms the deletion of a record
-    const confirmDelete = () => {
-        const updatedLeaves = leaves.filter((item) => item.id !== uiState.modalState.deleteRecord);
+    const confirmDelete = async () => {
+        const recordId = uiState.modalState.deleteRecord;
+        const updatedLeaves = leaves.filter((item) => item.id !== recordId);
         setLeaves(updatedLeaves); // Remove the record from the list
+        await deleteRecordFromXano(recordId); // Delete the record from Xano
         closeDeleteModal(); // Close the delete confirmation modal
         alert("Record deleted successfully.");
     };
