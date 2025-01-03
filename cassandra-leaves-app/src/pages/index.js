@@ -94,7 +94,7 @@ export default function Home({ leavesData }) {
         mimetype: "",
         preview_picture: null,
         published_by: "",
-        tags: "",
+        tags: [],
         title: "",
         updated_at: "",
         url: "",
@@ -116,7 +116,7 @@ export default function Home({ leavesData }) {
     const {isModalOpen: isDeleteModalOpen, openModal: openDeleteModal, closeModal: closeDeleteModal} = useModal();
 
     // Pagination settings
-    const itemsPerPage = 32;
+    const itemsPerPage = 16;
 
     // Memoized value to filter the leaves data based on the search query
     const filteredData = useMemo(() => {
@@ -196,7 +196,7 @@ export default function Home({ leavesData }) {
                     mimetype: "",
                     preview_picture: "",
                     published_by: "",
-                    tags: "",
+                    tags: [],
                     title: "",
                     updated_at: "",
                     url: "",
@@ -281,7 +281,7 @@ export default function Home({ leavesData }) {
                 mimetype: "",
                 preview_picture: null,
                 published_by: "",
-                tags: "",
+                tags: [],
                 title: "",
                 updated_at: "",
                 url: "",
@@ -452,7 +452,7 @@ export default function Home({ leavesData }) {
                                 type="text"
                                 name="tags"
                                 placeholder="Tags (comma-separated)"
-                                value={formState.tags.join(", ")}
+                                value={Array.isArray(formState.tags) ? formState.tags.join(", ") : ""}
                                 onChange={(e) =>
                                     setFormState({ ...formState, tags: e.target.value.split(",").map(tag => tag.trim()) })
                                 }
