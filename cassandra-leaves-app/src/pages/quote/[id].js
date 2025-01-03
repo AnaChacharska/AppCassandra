@@ -13,7 +13,7 @@ export default function QuoteDetail() {
     useEffect(() => {
         if (!id) {
             console.error("ID is not available");
-            return; // Avoid fetching if id is not available yet
+            return;
         }
         const fetchRecord = async () => {
             let retries = 3;
@@ -103,7 +103,6 @@ export default function QuoteDetail() {
             return newMode;
         });
     };
-
     return (
         <div className={`container ${isDarkMode ? 'dark' : ''}`}>
             <div className="toggle-container">
