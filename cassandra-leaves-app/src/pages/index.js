@@ -154,33 +154,77 @@ export default function Home({ leavesData }) {
     };
 
     // Adds a new record to the list
-    const handleAddRecord = () => {
+    const handleAddRecord = async () => {
         if (!formState.title || !formState.domain_name) {
             alert("Please fill out all fields.");
             return;
         }
 
         const newRecord = {
-            id: leaves.length + 1,
             title: formState.title,
             domain_name: formState.domain_name,
+            content: formState.content,
+            http_status: formState.http_status,
+            language: formState.language,
+            last_sourced_from_wallabag: formState.last_sourced_from_wallabag,
+            mimetype: formState.mimetype,
+            preview_picture: formState.preview_picture,
+            published_by: formState.published_by,
+            tags: formState.tags,
+            updated_at: formState.updated_at,
+            url: formState.url,
+            user_email: formState.user_email,
+            user_id: formState.user_id,
+            user_name: formState.user_name,
+            wallabag_created_at: formState.wallabag_created_at,
+            wallabag_is_archived: formState.wallabag_is_archived,
+            wallabag_updated_at: formState.wallabag_updated_at,
         };
 
-        setLeaves((prevLeaves) => [newRecord, ...prevLeaves]); // Add the new record to the top of the list
-        setFormState({id: "", title: "", domain_name: ""}); // Reset the form state
-        closeModal(); // Close the modal
-        setUiState((prevState) => ({
-            ...prevState,
-            modalState: {...prevState.modalState, successMessage: "Record added successfully!"},
-        }));
+        try {
+            const response = await axios.post("https://x8ki-letl-twmt.n7.xano.io/api:WVrFdUAc/cassandra_leaves", newRecord);
+            if (response.status === 200) {
+                const addedRecord = response.data;
+                setLeaves((prevLeaves) => [addedRecord, ...prevLeaves]); // Add the new record to the top of the list
+                setFormState({
+                    content: "",
+                    domain_name: "",
+                    http_status: "",
+                    language: "",
+                    last_sourced_from_wallabag: "",
+                    mimetype: "",
+                    preview_picture: "",
+                    published_by: "",
+                    tags: "",
+                    title: "",
+                    updated_at: "",
+                    url: "",
+                    user_email: "",
+                    user_id: "",
+                    user_name: "",
+                    wallabag_created_at: "",
+                    wallabag_is_archived: "",
+                    wallabag_updated_at: "",
+                }); // Reset the form state
+                closeModal(); // Close the modal
+                setUiState((prevState) => ({
+                    ...prevState,
+                    modalState: { ...prevState.modalState, successMessage: "Record added successfully!" },
+                }));
 
-        // Clear the success message after 3 seconds
-        setTimeout(() => {
-            setUiState((prevState) => ({
-                ...prevState,
-                modalState: {...prevState.modalState, successMessage: ""},
-            }));
-        }, 3000);
+                // Clear the success message after 3 seconds
+                setTimeout(() => {
+                    setUiState((prevState) => ({
+                        ...prevState,
+                        modalState: { ...prevState.modalState, successMessage: "" },
+                    }));
+                }, 3000);
+            } else {
+                console.error("Failed to add record to Xano");
+            }
+        } catch (error) {
+            console.error("Error adding record to Xano:", error);
+        }
     };
     const editRecordInXano = async (recordId, updatedData) => {
         try {
