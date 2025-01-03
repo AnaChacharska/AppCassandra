@@ -78,22 +78,23 @@ export default function Home({ leavesData }) {
                     setError(error.message);
                 }
             };
-
             fetchAllLeaves();
         }
     }, [leavesData, leaves, setLeaves]);
 
     // State to manage the form fields for adding or editing records
     const [formState, setFormState] = useState({
+        id: "",
+        created_at: "",
         content: "",
         domain_name: "",
         http_status: "",
         language: "",
         last_sourced_from_wallabag: "",
         mimetype: "",
-        preview_picture: "",
+        preview_picture: null,
         published_by: "",
-        tags: "",
+        tags: [],
         title: "",
         updated_at: "",
         url: "",
@@ -101,7 +102,7 @@ export default function Home({ leavesData }) {
         user_id: "",
         user_name: "",
         wallabag_created_at: "",
-        wallabag_is_archived: "",
+        wallabag_is_archived: false,
         wallabag_updated_at: "",
     });
 
@@ -115,7 +116,7 @@ export default function Home({ leavesData }) {
     const {isModalOpen: isDeleteModalOpen, openModal: openDeleteModal, closeModal: closeDeleteModal} = useModal();
 
     // Pagination settings
-    const itemsPerPage = 32;
+    const itemsPerPage = 16;
 
     // Memoized value to filter the leaves data based on the search query
     const filteredData = useMemo(() => {
@@ -195,7 +196,7 @@ export default function Home({ leavesData }) {
                     mimetype: "",
                     preview_picture: "",
                     published_by: "",
-                    tags: "",
+                    tags: [],
                     title: "",
                     updated_at: "",
                     url: "",
@@ -232,7 +233,7 @@ export default function Home({ leavesData }) {
             console.log(`Updating record at URL: ${url}`);
             console.log(`Record ID: ${recordId}`);
             console.log(`Updated Data:`, updatedData);
-            const response = await axios.put(url, updatedData);
+            const response = await axios.patch(url, updatedData);
             if (response.status === 200) {
                 console.log('Record updated successfully in Xano');
             } else {
@@ -258,64 +259,63 @@ export default function Home({ leavesData }) {
 
 // Updates the existing record in the list
     const handleUpdateRecord = async () => {
-        const updatedLeaves = leaves.map((item) =>
-            item.id === formState.id ? formState : item
-        );
+        try {
+            // Update the record in Xano first
+            await editRecordInXano(formState.id, formState);
 
-        setLeaves(updatedLeaves); // Update the list with the modified record
-        await editRecordInXano(formState.id, formState); // Update the record in Xano
-        setFormState({
-            id: "",
-            content: "",
-            domain_name: "",
-            http_status: "",
-            language: "",
-            last_sourced_from_wallabag: "",
-            mimetype: "",
-            preview_picture: "",
-            published_by: "",
-            tags: "",
-            title: "",
-            updated_at: "",
-            url: "",
-            user_email: "",
-            user_id: "",
-            user_name: "",
-            wallabag_created_at: "",
-            wallabag_is_archived: "",
-            wallabag_updated_at: "",
-        }); // Reset the form state
-        closeModal(); // Close the modal
-        setUiState((prevState) => ({
-            ...prevState,
-            modalState: {
-                ...prevState.modalState,
-                isEditing: false,
-                successMessage: "Record updated successfully!",
-            },
-        }));
+            // If successful, update the local state
+            const updatedLeaves = leaves.map((item) =>
+                item.id === formState.id ? formState : item
+            );
+            setLeaves(updatedLeaves);
 
-        // Clear the success message after 3 seconds
-        setTimeout(() => {
+            // Reset the form state
+            setFormState({
+                id: "",
+                created_at: "",
+                content: "",
+                domain_name: "",
+                http_status: "",
+                language: "",
+                last_sourced_from_wallabag: "",
+                mimetype: "",
+                preview_picture: null,
+                published_by: "",
+                tags: [],
+                title: "",
+                updated_at: "",
+                url: "",
+                user_email: "",
+                user_id: "",
+                user_name: "",
+                wallabag_created_at: "",
+                wallabag_is_archived: false,
+                wallabag_updated_at: "",
+            });
+
+            // Close the modal and show success message
+            closeModal();
             setUiState((prevState) => ({
                 ...prevState,
-                modalState: { ...prevState.modalState, successMessage: "" },
+                modalState: {
+                    ...prevState.modalState,
+                    isEditing: false,
+                    successMessage: "Record updated successfully!",
+                },
             }));
-        }, 3000);
-    };
 
-        const deleteRecordFromXano = async (recordId) => {
-            try {
-                const response = await axios.delete(`https://x8ki-letl-twmt.n7.xano.io/api:WVrFdUAc/cassandra_leaves/${recordId}`);
-                if (response.status === 200) {
-                    console.log('Record deleted successfully from Xano');
-                } else {
-                    console.error('Failed to delete record from Xano');
-                }
-            } catch (error) {
-                console.error('Error deleting record from Xano:', error);
-            }
-        };
+            // Clear the success message after 3 seconds
+            setTimeout(() => {
+                setUiState((prevState) => ({
+                    ...prevState,
+                    modalState: { ...prevState.modalState, successMessage: "" },
+                }));
+            }, 3000);
+        } catch (error) {
+            console.error("Error updating record in Xano:", error);
+            alert("Failed to update record. Please try again.");
+        }
+    };
 
         // Opens the delete confirmation modal
         const handleDelete = (id) => {
@@ -326,15 +326,28 @@ export default function Home({ leavesData }) {
             openDeleteModal(); // Open the delete confirmation modal
         };
 
-        // Confirms the deletion of a record
-        const confirmDelete = async () => {
-            const recordId = uiState.modalState.deleteRecord;
-            const updatedLeaves = leaves.filter((item) => item.id !== recordId);
-            setLeaves(updatedLeaves); // Remove the record from the list
-            await deleteRecordFromXano(recordId); // Delete the record from Xano
-            closeDeleteModal(); // Close the delete confirmation modal
-            alert("Record deleted successfully.");
-        };
+    const deleteRecordFromXano = async (recordId) => {
+        try {
+            const url = `https://x8ki-letl-twmt.n7.xano.io/api:WVrFdUAc/cassandra_leaves/${recordId}`;
+            const response = await axios.delete(url);
+            if (response.status === 200) {
+                console.log('Record deleted successfully from Xano');
+            } else {
+                console.error('Failed to delete record from Xano');
+            }
+        } catch (error) {
+            console.error('Error deleting record from Xano:', error);
+        }
+    };
+
+    const confirmDelete = async () => {
+        const recordId = uiState.modalState.deleteRecord;
+        await deleteRecordFromXano(recordId); // Delete the record from Xano
+        const updatedLeaves = leaves.filter((item) => item.id !== recordId);
+        setLeaves(updatedLeaves); // Remove the record from the list
+        closeDeleteModal(); // Close the delete confirmation modal
+        alert("Record deleted successfully.");
+    };
 
         return (
             <div className={`${styles.container} ${isDarkMode ? styles.dark : ""}`}>
@@ -376,6 +389,7 @@ export default function Home({ leavesData }) {
                     <div className={`${styles.modal} ${styles.scrollableModal}`}>
                         <div className={styles.modalContent}>
                             <h2>{uiState.modalState.isEditing ? "Edit Record" : "Add New Record"}</h2>
+                            {/* Modal Input Fields */}
                             <input
                                 type="text"
                                 name="content"
@@ -386,16 +400,16 @@ export default function Home({ leavesData }) {
                             <input
                                 type="text"
                                 name="domain_name"
-                                placeholder="Domain"
+                                placeholder="Domain Name"
                                 value={formState.domain_name}
                                 onChange={handleInputChange}
                             />
                             <input
                                 type="number"
                                 name="http_status"
-                                placeholder="Http Status"
+                                placeholder="HTTP Status"
                                 value={formState.http_status}
-                                onChange={handleInputChange}
+                                onChange={(e) => setFormState({ ...formState, http_status: Number(e.target.value) })}
                             />
                             <input
                                 type="text"
@@ -407,38 +421,41 @@ export default function Home({ leavesData }) {
                             <input
                                 type="date"
                                 name="last_sourced_from_wallabag"
-                                placeholder="Last sourced"
+                                placeholder="Last Sourced from Wallabag"
                                 value={formState.last_sourced_from_wallabag}
                                 onChange={handleInputChange}
                             />
                             <input
                                 type="text"
                                 name="mimetype"
-                                placeholder="Mimetype"
+                                placeholder="MIME Type"
                                 value={formState.mimetype}
                                 onChange={handleInputChange}
                             />
                             <input
-                                type="image"
+                                type="text"
                                 name="preview_picture"
-                                placeholder="Preview picture"
-                                value={formState.preview_picture}
-                                onChange={handleInputChange}
-                                alt="Preview picture"
+                                placeholder="Preview Picture URL"
+                                value={formState.preview_picture || ""}
+                                onChange={(e) =>
+                                    setFormState({ ...formState, preview_picture: e.target.value || null })
+                                }
                             />
                             <input
                                 type="text"
                                 name="published_by"
-                                placeholder="Published by"
+                                placeholder="Published By"
                                 value={formState.published_by}
                                 onChange={handleInputChange}
                             />
                             <input
                                 type="text"
-                                name="tags[]"
-                                placeholder="Tags"
-                                value={formState.tags}
-                                onChange={handleInputChange}
+                                name="tags"
+                                placeholder="Tags (comma-separated)"
+                                value={Array.isArray(formState.tags) ? formState.tags.join(", ") : ""}
+                                onChange={(e) =>
+                                    setFormState({ ...formState, tags: e.target.value.split(",").map(tag => tag.trim()) })
+                                }
                             />
                             <input
                                 type="text"
@@ -450,59 +467,64 @@ export default function Home({ leavesData }) {
                             <input
                                 type="date"
                                 name="updated_at"
-                                placeholder="Updated at"
+                                placeholder="Updated At"
                                 value={formState.updated_at}
                                 onChange={handleInputChange}
                             />
                             <input
                                 type="text"
                                 name="url"
-                                placeholder="Url"
+                                placeholder="URL"
                                 value={formState.url}
                                 onChange={handleInputChange}
                             />
                             <input
-                                type="text"
+                                type="email"
                                 name="user_email"
-                                placeholder="User email"
+                                placeholder="User Email"
                                 value={formState.user_email}
                                 onChange={handleInputChange}
                             />
                             <input
-                                type="text"
+                                type="number"
                                 name="user_id"
-                                placeholder="User id"
+                                placeholder="User ID"
                                 value={formState.user_id}
-                                onChange={handleInputChange}
+                                onChange={(e) => setFormState({ ...formState, user_id: Number(e.target.value) })}
                             />
                             <input
                                 type="text"
                                 name="user_name"
-                                placeholder="User name"
+                                placeholder="User Name"
                                 value={formState.user_name}
                                 onChange={handleInputChange}
                             />
                             <input
                                 type="date"
                                 name="wallabag_created_at"
-                                placeholder="Wallabag created at"
+                                placeholder="Wallabag Created At"
                                 value={formState.wallabag_created_at}
                                 onChange={handleInputChange}
                             />
-                            <input
-                                type="text"
-                                name="wallabag_is_archived"
-                                placeholder="Wallabag is archived"
-                                value={formState.wallabag_is_archived}
-                                onChange={handleInputChange}
-                            />
+                            <label>
+                                Wallabag is Archived:
+                                <input
+                                    type="checkbox"
+                                    name="wallabag_is_archived"
+                                    checked={formState.wallabag_is_archived}
+                                    onChange={(e) =>
+                                        setFormState({ ...formState, wallabag_is_archived: e.target.checked })
+                                    }
+                                />
+                            </label>
                             <input
                                 type="date"
                                 name="wallabag_updated_at"
-                                placeholder="Wallabag updated at"
+                                placeholder="Wallabag Updated At"
                                 value={formState.wallabag_updated_at}
                                 onChange={handleInputChange}
                             />
+
 
                             <div className={styles.modalActions}>
                                 {uiState.modalState.isEditing ? (
