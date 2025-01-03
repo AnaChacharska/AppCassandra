@@ -6,7 +6,7 @@ import axios from "axios";
 import { GlobalContext } from "../contexts/GlobalContext";
 
 export default function Home({ leavesData }) {
-    const { leaves, setLeaves } = useContext(GlobalContext);
+    const {leaves, setLeaves} = useContext(GlobalContext);
     const [error, setError] = useState("");
 
     // State to manage UI-specific details like search, pagination, and modal
@@ -106,13 +106,13 @@ export default function Home({ leavesData }) {
     });
 
     // Custom hook to manage dark mode functionality
-    const { isDarkMode, toggleDarkMode } = useDarkMode();
+    const {isDarkMode, toggleDarkMode} = useDarkMode();
 
     // Custom hook to manage the modal state for adding/editing records
-    const { isModalOpen, openModal, closeModal } = useModal();
+    const {isModalOpen, openModal, closeModal} = useModal();
 
     // Custom hook to manage the modal state for delete confirmation
-    const { isModalOpen: isDeleteModalOpen, openModal: openDeleteModal, closeModal: closeDeleteModal } = useModal();
+    const {isModalOpen: isDeleteModalOpen, openModal: openDeleteModal, closeModal: closeDeleteModal} = useModal();
 
     // Pagination settings
     const itemsPerPage = 32;
@@ -141,12 +141,12 @@ export default function Home({ leavesData }) {
     };
 
     const handleGoUp = () => {
-        window.scrollTo({ top: 0, behavior: "smooth" });
+        window.scrollTo({top: 0, behavior: "smooth"});
     };
 
     // Handles changes in form input fields
     const handleInputChange = (e) => {
-        const { name, value } = e.target;
+        const {name, value} = e.target;
         setFormState((prevState) => ({
             ...prevState,
             [name]: value,
@@ -167,40 +167,80 @@ export default function Home({ leavesData }) {
         };
 
         setLeaves((prevLeaves) => [newRecord, ...prevLeaves]); // Add the new record to the top of the list
-        setFormState({ id: "", title: "", domain_name: "" }); // Reset the form state
+        setFormState({id: "", title: "", domain_name: ""}); // Reset the form state
         closeModal(); // Close the modal
         setUiState((prevState) => ({
             ...prevState,
-            modalState: { ...prevState.modalState, successMessage: "Record added successfully!" },
+            modalState: {...prevState.modalState, successMessage: "Record added successfully!"},
         }));
 
         // Clear the success message after 3 seconds
         setTimeout(() => {
             setUiState((prevState) => ({
                 ...prevState,
-                modalState: { ...prevState.modalState, successMessage: "" },
+                modalState: {...prevState.modalState, successMessage: ""},
             }));
         }, 3000);
     };
-
-    // Prepares the form state for editing an existing record
-    const handleEdit = (record) => {
-        setFormState(record); // Populate form state with the selected record's data
-        openModal(); // Open the modal for editing
-        setUiState((prevState) => ({
-            ...prevState,
-            modalState: { ...prevState.modalState, isEditing: true },
-        }));
+    const editRecordInXano = async (recordId, updatedData) => {
+        try {
+            const url = `https://x8ki-letl-twmt.n7.xano.io/api:WVrFdUAc/cassandra_leaves/${recordId}`;
+            console.log(`Updating record at URL: ${url}`);
+            console.log(`Record ID: ${recordId}`);
+            console.log(`Updated Data:`, updatedData);
+            const response = await axios.put(url, updatedData);
+            if (response.status === 200) {
+                console.log('Record updated successfully in Xano');
+            } else {
+                console.error('Failed to update record in Xano');
+            }
+        } catch (error) {
+            console.error('Error updating record in Xano:', error);
+        }
     };
 
-    // Updates the existing record in the list
-    const handleUpdateRecord = () => {
+// Prepares the form state for editing an existing record
+    const handleEdit = (record) => {
+        setFormState(record); // Set the form state with the record's data
+        setUiState((prevState) => ({
+            ...prevState,
+            modalState: {
+                ...prevState.modalState,
+                isEditing: true,
+            },
+        }));
+        openModal(); // Open the modal
+    };
+
+// Updates the existing record in the list
+    const handleUpdateRecord = async () => {
         const updatedLeaves = leaves.map((item) =>
             item.id === formState.id ? formState : item
         );
 
         setLeaves(updatedLeaves); // Update the list with the modified record
-        setFormState({ id: "", title: "", domain_name: "" }); // Reset the form state
+        await editRecordInXano(formState.id, formState); // Update the record in Xano
+        setFormState({
+            id: "",
+            content: "",
+            domain_name: "",
+            http_status: "",
+            language: "",
+            last_sourced_from_wallabag: "",
+            mimetype: "",
+            preview_picture: "",
+            published_by: "",
+            tags: "",
+            title: "",
+            updated_at: "",
+            url: "",
+            user_email: "",
+            user_id: "",
+            user_name: "",
+            wallabag_created_at: "",
+            wallabag_is_archived: "",
+            wallabag_updated_at: "",
+        }); // Reset the form state
         closeModal(); // Close the modal
         setUiState((prevState) => ({
             ...prevState,
@@ -220,311 +260,312 @@ export default function Home({ leavesData }) {
         }, 3000);
     };
 
-    const deleteRecordFromXano = async (recordId) => {
-        try {
-            const response = await axios.delete(`https://x8ki-letl-twmt.n7.xano.io/api:WVrFdUAc/cassandra_leaves/${recordId}`);
-            if (response.status === 200) {
-                console.log('Record deleted successfully from Xano');
-            } else {
-                console.error('Failed to delete record from Xano');
+        const deleteRecordFromXano = async (recordId) => {
+            try {
+                const response = await axios.delete(`https://x8ki-letl-twmt.n7.xano.io/api:WVrFdUAc/cassandra_leaves/${recordId}`);
+                if (response.status === 200) {
+                    console.log('Record deleted successfully from Xano');
+                } else {
+                    console.error('Failed to delete record from Xano');
+                }
+            } catch (error) {
+                console.error('Error deleting record from Xano:', error);
             }
-        } catch (error) {
-            console.error('Error deleting record from Xano:', error);
-        }
-    };
+        };
 
-    // Opens the delete confirmation modal
-    const handleDelete = (id) => {
-        setUiState((prevState) => ({
-            ...prevState,
-            modalState: { ...prevState.modalState, deleteRecord: id },
-        }));
-        openDeleteModal(); // Open the delete confirmation modal
-    };
+        // Opens the delete confirmation modal
+        const handleDelete = (id) => {
+            setUiState((prevState) => ({
+                ...prevState,
+                modalState: {...prevState.modalState, deleteRecord: id},
+            }));
+            openDeleteModal(); // Open the delete confirmation modal
+        };
 
-    // Confirms the deletion of a record
-    const confirmDelete = async () => {
-        const recordId = uiState.modalState.deleteRecord;
-        const updatedLeaves = leaves.filter((item) => item.id !== recordId);
-        setLeaves(updatedLeaves); // Remove the record from the list
-        await deleteRecordFromXano(recordId); // Delete the record from Xano
-        closeDeleteModal(); // Close the delete confirmation modal
-        alert("Record deleted successfully.");
-    };
+        // Confirms the deletion of a record
+        const confirmDelete = async () => {
+            const recordId = uiState.modalState.deleteRecord;
+            const updatedLeaves = leaves.filter((item) => item.id !== recordId);
+            setLeaves(updatedLeaves); // Remove the record from the list
+            await deleteRecordFromXano(recordId); // Delete the record from Xano
+            closeDeleteModal(); // Close the delete confirmation modal
+            alert("Record deleted successfully.");
+        };
 
-    return (
-        <div className={`${styles.container} ${isDarkMode ? styles.dark : ""}`}>
-            <h1 className={styles.title}>Cassandra Leaves Dashboard</h1>
+        return (
+            <div className={`${styles.container} ${isDarkMode ? styles.dark : ""}`}>
+                <h1 className={styles.title}>Cassandra Leaves Dashboard</h1>
 
-            {/* Display success message */}
-            {uiState.modalState.successMessage && (
-                <div className={styles.successMessage}>{uiState.modalState.successMessage}</div>
-            )}
+                {/* Display success message */}
+                {uiState.modalState.successMessage && (
+                    <div className={styles.successMessage}>{uiState.modalState.successMessage}</div>
+                )}
 
-            {/* Toggle for dark mode */}
-            <div className={styles.toggleContainer}>
-                <label className={styles.toggleSwitch}>
+                {/* Toggle for dark mode */}
+                <div className={styles.toggleContainer}>
+                    <label className={styles.toggleSwitch}>
+                        <input
+                            type="checkbox"
+                            checked={isDarkMode}
+                            onChange={toggleDarkMode}
+                        />
+                        <span className={styles.slider}></span>
+                    </label>
+                </div>
+
+                {/* Search bar and Add Record button */}
+                <div className={styles.searchAddContainer}>
                     <input
-                        type="checkbox"
-                        checked={isDarkMode}
-                        onChange={toggleDarkMode}
+                        type="text"
+                        placeholder="Search by title..."
+                        value={uiState.searchQuery}
+                        onChange={(e) => handleSearch(e.target.value)}
+                        className={styles.searchBar}
                     />
-                    <span className={styles.slider}></span>
-                </label>
-            </div>
+                    <button className={styles.addButton} onClick={openModal}>
+                        Add Record
+                    </button>
+                </div>
 
-            {/* Search bar and Add Record button */}
-            <div className={styles.searchAddContainer}>
-                <input
-                    type="text"
-                    placeholder="Search by title..."
-                    value={uiState.searchQuery}
-                    onChange={(e) => handleSearch(e.target.value)}
-                    className={styles.searchBar}
-                />
-                <button className={styles.addButton} onClick={openModal}>
-                    Add Record
-                </button>
-            </div>
+                {/* Modal for adding or editing a record */}
+                {isModalOpen && (
+                    <div className={`${styles.modal} ${styles.scrollableModal}`}>
+                        <div className={styles.modalContent}>
+                            <h2>{uiState.modalState.isEditing ? "Edit Record" : "Add New Record"}</h2>
+                            <input
+                                type="text"
+                                name="content"
+                                placeholder="Content"
+                                value={formState.content}
+                                onChange={handleInputChange}
+                            />
+                            <input
+                                type="text"
+                                name="domain_name"
+                                placeholder="Domain"
+                                value={formState.domain_name}
+                                onChange={handleInputChange}
+                            />
+                            <input
+                                type="number"
+                                name="http_status"
+                                placeholder="Http Status"
+                                value={formState.http_status}
+                                onChange={handleInputChange}
+                            />
+                            <input
+                                type="text"
+                                name="language"
+                                placeholder="Language"
+                                value={formState.language}
+                                onChange={handleInputChange}
+                            />
+                            <input
+                                type="date"
+                                name="last_sourced_from_wallabag"
+                                placeholder="Last sourced"
+                                value={formState.last_sourced_from_wallabag}
+                                onChange={handleInputChange}
+                            />
+                            <input
+                                type="text"
+                                name="mimetype"
+                                placeholder="Mimetype"
+                                value={formState.mimetype}
+                                onChange={handleInputChange}
+                            />
+                            <input
+                                type="image"
+                                name="preview_picture"
+                                placeholder="Preview picture"
+                                value={formState.preview_picture}
+                                onChange={handleInputChange}
+                                alt="Preview picture"
+                            />
+                            <input
+                                type="text"
+                                name="published_by"
+                                placeholder="Published by"
+                                value={formState.published_by}
+                                onChange={handleInputChange}
+                            />
+                            <input
+                                type="text"
+                                name="tags[]"
+                                placeholder="Tags"
+                                value={formState.tags}
+                                onChange={handleInputChange}
+                            />
+                            <input
+                                type="text"
+                                name="title"
+                                placeholder="Title"
+                                value={formState.title}
+                                onChange={handleInputChange}
+                            />
+                            <input
+                                type="date"
+                                name="updated_at"
+                                placeholder="Updated at"
+                                value={formState.updated_at}
+                                onChange={handleInputChange}
+                            />
+                            <input
+                                type="text"
+                                name="url"
+                                placeholder="Url"
+                                value={formState.url}
+                                onChange={handleInputChange}
+                            />
+                            <input
+                                type="text"
+                                name="user_email"
+                                placeholder="User email"
+                                value={formState.user_email}
+                                onChange={handleInputChange}
+                            />
+                            <input
+                                type="text"
+                                name="user_id"
+                                placeholder="User id"
+                                value={formState.user_id}
+                                onChange={handleInputChange}
+                            />
+                            <input
+                                type="text"
+                                name="user_name"
+                                placeholder="User name"
+                                value={formState.user_name}
+                                onChange={handleInputChange}
+                            />
+                            <input
+                                type="date"
+                                name="wallabag_created_at"
+                                placeholder="Wallabag created at"
+                                value={formState.wallabag_created_at}
+                                onChange={handleInputChange}
+                            />
+                            <input
+                                type="text"
+                                name="wallabag_is_archived"
+                                placeholder="Wallabag is archived"
+                                value={formState.wallabag_is_archived}
+                                onChange={handleInputChange}
+                            />
+                            <input
+                                type="date"
+                                name="wallabag_updated_at"
+                                placeholder="Wallabag updated at"
+                                value={formState.wallabag_updated_at}
+                                onChange={handleInputChange}
+                            />
 
-            {/* Modal for adding or editing a record */}
-            {isModalOpen && (
-                <div className={`${styles.modal} ${styles.scrollableModal}`}>
-                    <div className={styles.modalContent}>
-                        <h2>{uiState.modalState.isEditing ? "Edit Record" : "Add New Record"}</h2>
-                        <input
-                            type="text"
-                            name="content"
-                            placeholder="Content"
-                            value={formState.content}
-                            onChange={handleInputChange}
-                        />
-                        <input
-                            type="text"
-                            name="domain_name"
-                            placeholder="Domain"
-                            value={formState.domain_name}
-                            onChange={handleInputChange}
-                        />
-                        <input
-                            type="number"
-                            name="http_status"
-                            placeholder="Http Status"
-                            value={formState.http_status}
-                            onChange={handleInputChange}
-                        />
-                        <input
-                            type="text"
-                            name="language"
-                            placeholder="Language"
-                            value={formState.language}
-                            onChange={handleInputChange}
-                        />
-                        <input
-                            type="date"
-                            name="last_sourced_from_wallabag"
-                            placeholder="Last sourced"
-                            value={formState.last_sourced_from_wallabag}
-                            onChange={handleInputChange}
-                        />
-                        <input
-                            type="text"
-                            name="mimetype"
-                            placeholder="Mimetype"
-                            value={formState.mimetype}
-                            onChange={handleInputChange}
-                        />
-                        <input
-                            type="image"
-                            name="preview_picture"
-                            placeholder="Preview picture"
-                            value={formState.preview_picture}
-                            onChange={handleInputChange}
-                            alt="Preview picture"
-                        />
-                        <input
-                            type="text"
-                            name="published_by"
-                            placeholder="Published by"
-                            value={formState.published_by}
-                            onChange={handleInputChange}
-                        />
-                        <input
-                            type="text"
-                            name="tags[]"
-                            placeholder="Tags"
-                            value={formState.tags}
-                            onChange={handleInputChange}
-                        />
-                        <input
-                            type="text"
-                            name="title"
-                            placeholder="Title"
-                            value={formState.title}
-                            onChange={handleInputChange}
-                        />
-                        <input
-                            type="date"
-                            name="updated_at"
-                            placeholder="Updated at"
-                            value={formState.updated_at}
-                            onChange={handleInputChange}
-                        />
-                        <input
-                            type="text"
-                            name="url"
-                            placeholder="Url"
-                            value={formState.url}
-                            onChange={handleInputChange}
-                        />
-                        <input
-                            type="text"
-                            name="user_email"
-                            placeholder="User email"
-                            value={formState.user_email}
-                            onChange={handleInputChange}
-                        />
-                        <input
-                            type="text"
-                            name="user_id"
-                            placeholder="User id"
-                            value={formState.user_id}
-                            onChange={handleInputChange}
-                        />
-                        <input
-                            type="text"
-                            name="user_name"
-                            placeholder="User name"
-                            value={formState.user_name}
-                            onChange={handleInputChange}
-                        />
-                        <input
-                            type="date"
-                            name="wallabag_created_at"
-                            placeholder="Wallabag created at"
-                            value={formState.wallabag_created_at}
-                            onChange={handleInputChange}
-                        />
-                        <input
-                            type="text"
-                            name="wallabag_is_archived"
-                            placeholder="Wallabag is archived"
-                            value={formState.wallabag_is_archived}
-                            onChange={handleInputChange}
-                        />
-                        <input
-                            type="date"
-                            name="wallabag_updated_at"
-                            placeholder="Wallabag updated at"
-                            value={formState.wallabag_updated_at}
-                            onChange={handleInputChange}
-                        />
-
-                        <div className={styles.modalActions}>
-                            {uiState.modalState.isEditing ? (
-                                <button onClick={handleUpdateRecord}>Update</button>
-                            ) : (
-                                <button onClick={handleAddRecord}>Add</button>
-                            )}
-                            <button onClick={closeModal}>Cancel</button>
+                            <div className={styles.modalActions}>
+                                {uiState.modalState.isEditing ? (
+                                    <button onClick={handleUpdateRecord}>Update</button>
+                                ) : (
+                                    <button onClick={handleAddRecord}>Add</button>
+                                )}
+                                <button onClick={closeModal}>Cancel</button>
+                            </div>
                         </div>
                     </div>
-                </div>
-            )}
+                )}
 
-            {/* Modal for delete confirmation */}
-            {isDeleteModalOpen && (
-                <div className={`${styles.modal} ${styles.nonScrollableModal}`}>
-                    <div className={styles.modalContent}>
-                        <h2>Confirm Deletion</h2>
-                        <p>Are you sure you want to delete this record?</p>
-                        <div className={styles.modalActions}>
-                            <button onClick={confirmDelete}>Yes, Delete</button>
-                            <button onClick={closeDeleteModal}>Cancel</button>
+                {/* Modal for delete confirmation */}
+                {isDeleteModalOpen && (
+                    <div className={`${styles.modal} ${styles.nonScrollableModal}`}>
+                        <div className={styles.modalContent}>
+                            <h2>Confirm Deletion</h2>
+                            <p>Are you sure you want to delete this record?</p>
+                            <div className={styles.modalActions}>
+                                <button onClick={confirmDelete}>Yes, Delete</button>
+                                <button onClick={closeDeleteModal}>Cancel</button>
+                            </div>
                         </div>
                     </div>
+                )}
+
+                {/* Display the records using the Card component */}
+                <div className={styles.grid}>
+                    {paginatedData.map((item) => (
+                        <Card
+                            key={item.id}
+                            item={item}
+                            onEdit={handleEdit}
+                            onDelete={handleDelete}
+                        />
+                    ))}
                 </div>
-            )}
 
-            {/* Display the records using the Card component */}
-            <div className={styles.grid}>
-                {paginatedData.map((item) => (
-                    <Card
-                        key={item.id}
-                        item={item}
-                        onEdit={handleEdit}
-                        onDelete={handleDelete}
-                    />
-                ))}
-            </div>
-
-            {/* Pagination controls */}
-            <div className={styles.pagination}>
-                <button
-                    onClick={() =>
-                        setUiState((prevState) => ({
-                            ...prevState,
-                            currentPage: Math.max(prevState.currentPage - 1, 1),
-                        }))
-                    }
-                    disabled={uiState.currentPage === 1}
-                >
-                    Previous
-                </button>
-                <span>
+                {/* Pagination controls */}
+                <div className={styles.pagination}>
+                    <button
+                        onClick={() =>
+                            setUiState((prevState) => ({
+                                ...prevState,
+                                currentPage: Math.max(prevState.currentPage - 1, 1),
+                            }))
+                        }
+                        disabled={uiState.currentPage === 1}
+                    >
+                        Previous
+                    </button>
+                    <span>
                     Page {uiState.currentPage} of {totalPages}
                 </span>
-                <button
-                    onClick={() =>
-                        setUiState((prevState) => ({
-                            ...prevState,
-                            currentPage: Math.min(prevState.currentPage + 1, totalPages),
-                        }))
-                    }
-                    disabled={uiState.currentPage === totalPages}
-                >
-                    Next
-                </button>
+                    <button
+                        onClick={() =>
+                            setUiState((prevState) => ({
+                                ...prevState,
+                                currentPage: Math.min(prevState.currentPage + 1, totalPages),
+                            }))
+                        }
+                        disabled={uiState.currentPage === totalPages}
+                    >
+                        Next
+                    </button>
+                </div>
+                <div className={styles.goUpButton} onClick={handleGoUp}>
+                    <img src="/up-chevron_8213555.png" alt="Go to top"/>
+                </div>
             </div>
-            <div className={styles.goUpButton} onClick={handleGoUp}>
-                <img src="/up-chevron_8213555.png" alt="Go to top" />
-            </div>
-        </div>
-    );
-}
-// Static data fetching function to get leaves data
-export async function getStaticProps() {
-    try {
-        let allLeaves = [];
-        let page = 1;
-        const offset = 0;
-
-        while (true) {
-            const response = await axios.get("https://x8ki-letl-twmt.n7.xano.io/api:WVrFdUAc/cassandra_leaves", {
-                params: {
-                    page_number: page,
-                    offset: offset,
-                },
-            });
-
-            const items = response.data.items;
-            if (items.length === 0) break;
-
-            allLeaves = [...allLeaves, ...items];
-            page++;
-        }
-
-        return {
-            props: {
-                leavesData: allLeaves,
-            },
-        };
-    } catch (error) {
-        console.error("Error fetching data from Xano:", error);
-        return {
-            props: {
-                leavesData: [],
-            },
-        };
+        );
     }
-}
+
+// Static data fetching function to get leaves data
+    export async function getStaticProps() {
+        try {
+            let allLeaves = [];
+            let page = 1;
+            const offset = 0;
+
+            while (true) {
+                const response = await axios.get("https://x8ki-letl-twmt.n7.xano.io/api:WVrFdUAc/cassandra_leaves", {
+                    params: {
+                        page_number: page,
+                        offset: offset,
+                    },
+                });
+
+                const items = response.data.items;
+                if (items.length === 0) break;
+
+                allLeaves = [...allLeaves, ...items];
+                page++;
+            }
+
+            return {
+                props: {
+                    leavesData: allLeaves,
+                },
+            };
+        } catch (error) {
+            console.error("Error fetching data from Xano:", error);
+            return {
+                props: {
+                    leavesData: [],
+                },
+            };
+        }
+    }
