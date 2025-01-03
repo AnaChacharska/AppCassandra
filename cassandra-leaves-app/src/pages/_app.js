@@ -11,5 +11,4 @@ function MyApp({ Component, pageProps }) {
         </DarkModeProvider>
     );
 }
-
 export default MyApp;
