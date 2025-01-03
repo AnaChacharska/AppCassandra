@@ -1,12 +1,12 @@
-import {useState, useMemo, useEffect} from "react";
-import {useModal, useDarkMode} from "../hooks/useModal"; // Custom hooks for managing modal and dark mode
+import { useState, useMemo, useEffect, useContext } from "react";
+import { useModal, useDarkMode } from "../hooks/useModal"; // Custom hooks for managing modal and dark mode
 import Card from "../components/Card"; // Reusable Card component to display data
 import styles from "./Home.module.css"; // CSS module for styling
 import axios from "axios";
+import { GlobalContext } from "../contexts/GlobalContext";
 
-export default function Home({leavesData}) {
-    // State to manage the list of leaves data
-    const [leaves, setLeaves] = useState(leavesData || []);
+export default function Home({ leavesData }) {
+    const { leaves, setLeaves } = useContext(GlobalContext);
     const [error, setError] = useState("");
 
     // State to manage UI-specific details like search, pagination, and modal
@@ -21,15 +21,22 @@ export default function Home({leavesData}) {
         },
     });
 
+    // In-memory cache for API responses
+    const cache = {};
+
     // Fetch data from Xano on component mount
     useEffect(() => {
+        setLeaves(leavesData);
         const fetchAllLeaves = async () => {
             let allLeaves = [];
             let page = 1;
-            const offset = 8; // Number of items per page
+            const offset = 0;
             const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
             const fetchPage = async (page) => {
+                if (cache[page]) {
+                    return cache[page];
+                }
                 try {
                     const response = await axios.get(
                         "https://x8ki-letl-twmt.n7.xano.io/api:WVrFdUAc/cassandra_leaves",
@@ -42,31 +49,37 @@ export default function Home({leavesData}) {
                     );
 
                     const items = response.data.items;
-                    if (items.length > 0) {
-                        allLeaves = [...allLeaves, ...items];
-                        setLeaves(allLeaves); // Update state after each page
-                        await delay(1000); // Delay of 1 second between requests
-                        await fetchPage(page + 1); // Fetch the next page
-                    } else {
-                        setLeaves(allLeaves); // Set the leaves state when done
-                    }
+                    cache[page] = items; // Store the response in cache
+                    return items;
                 } catch (error) {
                     if (error.response && error.response.status === 429) {
                         console.warn("Rate limit exceeded. Retrying...");
                         await delay(2000); // Delay of 2 seconds before retrying
-                        await fetchPage(page); // Retry the same page
+                        return await fetchPage(page); // Retry the same page
                     } else {
                         setError("Error fetching data");
                         console.error("Error fetching data from Xano:", error);
+                        return [];
                     }
                 }
             };
 
-            await fetchPage(page);
+            try {
+                while (true) {
+                    const items = await fetchPage(page);
+                    if (items.length === 0) break;
+                    allLeaves = [...allLeaves, ...items];
+                    setLeaves(allLeaves); // Update state after each page
+                    await delay(1000); // Delay of 1 second between requests
+                    page++;
+                }
+            } catch (error) {
+                setError(error.message);
+            }
         };
 
         fetchAllLeaves();
-    }, []);
+    }, [leavesData, setLeaves]);
 
     // State to manage the form fields for adding or editing records
     const [formState, setFormState] = useState({
@@ -91,20 +104,20 @@ export default function Home({leavesData}) {
     });
 
     // Custom hook to manage dark mode functionality
-    const {isDarkMode, toggleDarkMode} = useDarkMode();
+    const { isDarkMode, toggleDarkMode } = useDarkMode();
 
     // Custom hook to manage the modal state for adding/editing records
-    const {isModalOpen, openModal, closeModal} = useModal();
+    const { isModalOpen, openModal, closeModal } = useModal();
 
     // Custom hook to manage the modal state for delete confirmation
-    const {isModalOpen: isDeleteModalOpen, openModal: openDeleteModal, closeModal: closeDeleteModal} = useModal();
+    const { isModalOpen: isDeleteModalOpen, openModal: openDeleteModal, closeModal: closeDeleteModal } = useModal();
 
     // Pagination settings
     const itemsPerPage = 16;
 
     // Memoized value to filter the leaves data based on the search query
     const filteredData = useMemo(() => {
-        return leaves.filter((item) =>
+        return (leaves || []).filter((item) =>
             item.title.toLowerCase().includes(uiState.searchQuery.toLowerCase())
         );
     }, [leaves, uiState.searchQuery]);
@@ -131,7 +144,7 @@ export default function Home({leavesData}) {
 
     // Handles changes in form input fields
     const handleInputChange = (e) => {
-        const {name, value} = e.target;
+        const { name, value } = e.target;
         setFormState((prevState) => ({
             ...prevState,
             [name]: value,
@@ -152,18 +165,18 @@ export default function Home({leavesData}) {
         };
 
         setLeaves((prevLeaves) => [newRecord, ...prevLeaves]); // Add the new record to the top of the list
-        setFormState({id: "", title: "", domain_name: ""}); // Reset the form state
+        setFormState({ id: "", title: "", domain_name: "" }); // Reset the form state
         closeModal(); // Close the modal
         setUiState((prevState) => ({
             ...prevState,
-            modalState: {...prevState.modalState, successMessage: "Record added successfully!"},
+            modalState: { ...prevState.modalState, successMessage: "Record added successfully!" },
         }));
 
         // Clear the success message after 3 seconds
         setTimeout(() => {
             setUiState((prevState) => ({
                 ...prevState,
-                modalState: {...prevState.modalState, successMessage: ""},
+                modalState: { ...prevState.modalState, successMessage: "" },
             }));
         }, 3000);
     };
@@ -174,7 +187,7 @@ export default function Home({leavesData}) {
         openModal(); // Open the modal for editing
         setUiState((prevState) => ({
             ...prevState,
-            modalState: {...prevState.modalState, isEditing: true},
+            modalState: { ...prevState.modalState, isEditing: true },
         }));
     };
 
@@ -185,7 +198,7 @@ export default function Home({leavesData}) {
         );
 
         setLeaves(updatedLeaves); // Update the list with the modified record
-        setFormState({id: "", title: "", domain_name: ""}); // Reset the form state
+        setFormState({ id: "", title: "", domain_name: "" }); // Reset the form state
         closeModal(); // Close the modal
         setUiState((prevState) => ({
             ...prevState,
@@ -200,7 +213,7 @@ export default function Home({leavesData}) {
         setTimeout(() => {
             setUiState((prevState) => ({
                 ...prevState,
-                modalState: {...prevState.modalState, successMessage: ""},
+                modalState: { ...prevState.modalState, successMessage: "" },
             }));
         }, 3000);
     };
@@ -209,7 +222,7 @@ export default function Home({leavesData}) {
     const handleDelete = (id) => {
         setUiState((prevState) => ({
             ...prevState,
-            modalState: {...prevState.modalState, deleteRecord: id},
+            modalState: { ...prevState.modalState, deleteRecord: id },
         }));
         openDeleteModal(); // Open the delete confirmation modal
     };
@@ -310,6 +323,7 @@ export default function Home({leavesData}) {
                             placeholder="Preview picture"
                             value={formState.preview_picture}
                             onChange={handleInputChange}
+                            alt="Preview picture"
                         />
                         <input
                             type="text"
@@ -464,10 +478,37 @@ export default function Home({leavesData}) {
 
 // Static data fetching function to get leaves data
 export async function getStaticProps() {
-    const leavesData = require("../data/leaves.json"); // Load data from a local JSON file
-    return {
-        props: {
-            leavesData,
-        },
-    };
+    try {
+        let allLeaves = [];
+        let page = 1;
+        const offset = 0;
+
+        while (true) {
+            const response = await axios.get("https://x8ki-letl-twmt.n7.xano.io/api:WVrFdUAc/cassandra_leaves", {
+                params: {
+                    page_number: page,
+                    offset: offset,
+                },
+            });
+
+            const items = response.data.items;
+            if (items.length === 0) break;
+
+            allLeaves = [...allLeaves, ...items];
+            page++;
+        }
+
+        return {
+            props: {
+                leavesData: allLeaves,
+            },
+        };
+    } catch (error) {
+        console.error("Error fetching data from Xano:", error);
+        return {
+            props: {
+                leavesData: [],
+            },
+        };
+    }
 }
