@@ -8,6 +8,8 @@ import { GlobalContext } from "../contexts/GlobalContext";
 export default function Home({ leavesData }) {
     const {leaves, setLeaves} = useContext(GlobalContext);
     const [error, setError] = useState("");
+    const [isLoading, setIsLoading] = useState(true);
+    const [isInitialLoad, setIsInitialLoad] = useState(true); // Flag for initial load
 
     // State to manage UI-specific details like search, pagination, and modal
     const [uiState, setUiState] = useState({
@@ -34,6 +36,8 @@ export default function Home({ leavesData }) {
 
         if (leaves.length === 0 && leavesData.length > 0) {
             setLeaves(leavesData);
+            setIsLoading(false);
+            setIsInitialLoad(false);
         } else if (leaves.length === 0) {
             const fetchAllLeaves = async () => {
                 let allLeaves = [];
@@ -84,8 +88,12 @@ export default function Home({ leavesData }) {
                 } catch (error) {
                     setError(error.message);
                 }
+                setIsLoading(false);
+                setIsInitialLoad(false);
             };
             fetchAllLeaves();
+        }else {
+            setIsLoading(false);
         }
     }, [leavesData, leaves, setLeaves]);
 
@@ -367,6 +375,12 @@ export default function Home({ leavesData }) {
 
         return (
             <div className={`${styles.container} ${isDarkMode ? styles.dark : ""}`}>
+                {isLoading && isInitialLoad? (
+                    <div className={styles.loading}>
+                        <div className={styles.spinner}></div>
+                    </div>
+                ) : (
+                    <>
                 <h1 className={styles.title}>Cassandra Leaves Dashboard</h1>
 
                 {/* Display success message */}
@@ -612,6 +626,8 @@ export default function Home({ leavesData }) {
                 <div className={styles.goUpButton} onClick={handleGoUp}>
                     <img src="/up-chevron_8213555.png" alt="Go to top"/>
                 </div>
+                </>
+                    )}
             </div>
         );
     }

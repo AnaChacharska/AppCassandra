@@ -1,6 +1,7 @@
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import axios from "axios";
+import styles from "../Home.module.css";
 
 export default function QuoteDetail() {
     const router = useRouter();
@@ -9,6 +10,7 @@ export default function QuoteDetail() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [record, setRecord] = useState(null);
+    const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
         if (!id) {
@@ -69,7 +71,11 @@ export default function QuoteDetail() {
     }, []);
 
     if (loading) {
-        return <div>Loading...</div>;
+        return (
+        <div className={styles.loading}>
+            <div className={styles.spinner}></div>
+        </div>
+        );
     }
 
     if (error) {
@@ -471,6 +477,28 @@ export default function QuoteDetail() {
                 .info-label, .info-value {
                   text-align: center;
                 }
+              }
+
+              .loading {
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                height: 100vh;
+              }
+
+              .spinner {
+                border: 4px solid transparent;
+                border-top: 4px solid #3498db; /* Blue */
+                border-right: 4px solid #e74c3c; /* Red for a gradient effect */
+                border-radius: 50%;
+                width: 60px; /* Smaller size */
+                height: 60px;
+                animation: spin 1.2s linear infinite; /* Faster spin */
+              }
+
+              @keyframes spin {
+                0% { transform: rotate(0deg); }
+                100% { transform: rotate(360deg); }
               }
             `}</style>
         </div>
