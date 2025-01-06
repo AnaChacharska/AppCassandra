@@ -2,6 +2,7 @@ import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import axios from "axios";
 import styles from "../Home.module.css";
+import BackButton from "../../components/BackButton";
 
 export default function QuoteDetail() {
     const router = useRouter();
@@ -81,11 +82,16 @@ export default function QuoteDetail() {
     if (error) {
         return (
             <div className="container">
-                <div className="back-button" onClick={() => router.push(`/?page=${page || 1}`)}>
-                    Back
-                </div>
-                <h1 className="title">Error</h1>
-                <p>{error}</p>
+                <BackButton page={page} />
+                {/*<div className="back-button" onClick={() => router.push(`/?page=${page || 1}`)}>*/}
+                {/*    <span>&lt;Back</span>*/}
+                {/*</div>*/}
+                {/*<h1 className="title">Error</h1>*/}
+                <p>{error  && (
+                    <div className={styles.errorMessage}>
+                        {error}
+                    </div>
+                )}</p>
             </div>
         );
     }
@@ -93,9 +99,10 @@ export default function QuoteDetail() {
     if (!record) {
         return (
             <div className="container">
-                <div className="back-button" onClick={() => router.push(`/?page=${page || 1}`)}>
-                    Back
-                </div>
+                <BackButton page={page} />
+                {/*<div className="back-button" onClick={() => router.push(`/?page=${page || 1}`)}>*/}
+                {/*    Back*/}
+                {/*</div>*/}
                 <h1 className="title">Record Not Found</h1>
                 <p>The record with ID {id} does not exist.</p>
             </div>

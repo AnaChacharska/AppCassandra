@@ -1,4 +1,3 @@
-// Card.js
 import styles from "./Card.module.css";
 import { useDarkMode } from "../contexts/DarkModeContext";
 import Link from "next/link";
