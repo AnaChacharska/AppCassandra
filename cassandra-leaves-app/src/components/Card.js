@@ -14,7 +14,7 @@ const Card = ({ item, onEdit, onDelete, uiState }) => {
                 className={styles["card-image"]}
             />
             <div className={styles["card-content"]}>
-                <Link href={`/quote/${item.id}?page=${uiState.currentPage}`}>
+                <Link href={`/quote/${item.id}?page=${uiState.currentPage}`} className={styles["card-title-whole"]}>
                     <h2
                         className={styles["card-title"]}
                         dangerouslySetInnerHTML={{ __html: item.title }}

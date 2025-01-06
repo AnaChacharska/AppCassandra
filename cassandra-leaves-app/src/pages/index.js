@@ -1,15 +1,18 @@
-import { useState, useMemo, useEffect, useContext } from "react";
-import { useModal, useDarkMode } from "../hooks/useModal"; // Custom hooks for managing modal and dark mode
+import {useState, useMemo, useEffect, useContext} from "react";
+import {useModal, useDarkMode} from "../hooks/useModal"; // Custom hooks for managing modal and dark mode
 import Card from "../components/Card"; // Reusable Card component to display data
 import styles from "./Home.module.css"; // CSS module for styling
 import axios from "axios";
-import { GlobalContext } from "../contexts/GlobalContext";
+import {GlobalContext} from "../contexts/GlobalContext";
+import SuccessModal from "../components/SuccessModal";
 
-export default function Home({ leavesData }) {
+export default function Home({leavesData}) {
     const {leaves, setLeaves} = useContext(GlobalContext);
     const [error, setError] = useState("");
     const [isLoading, setIsLoading] = useState(true);
-    const [isInitialLoad, setIsInitialLoad] = useState(true); // Flag for initial load
+    const [isInitialLoad, setIsInitialLoad] = useState(true);
+    const [isDeleteSuccessModalOpen, setIsDeleteSuccessModalOpen] = useState(false);
+    const [isEditSuccessModalOpen, setIsEditSuccessModalOpen] = useState(false);
 
     // State to manage UI-specific details like search, pagination, and modal
     const [uiState, setUiState] = useState({
@@ -92,7 +95,7 @@ export default function Home({ leavesData }) {
                 setIsInitialLoad(false);
             };
             fetchAllLeaves();
-        }else {
+        } else {
             setIsLoading(false);
         }
     }, [leavesData, leaves, setLeaves]);
@@ -234,14 +237,14 @@ export default function Home({ leavesData }) {
                 closeModal(); // Close the modal
                 setUiState((prevState) => ({
                     ...prevState,
-                    modalState: { ...prevState.modalState, successMessage: "Record added successfully!" },
+                    modalState: {...prevState.modalState, successMessage: "Record added successfully!"},
                 }));
 
                 // Clear the success message after 3 seconds
                 setTimeout(() => {
                     setUiState((prevState) => ({
                         ...prevState,
-                        modalState: { ...prevState.modalState, successMessage: "" },
+                        modalState: {...prevState.modalState, successMessage: ""},
                     }));
                 }, 3000);
             } else {
@@ -292,7 +295,8 @@ export default function Home({ leavesData }) {
                 item.id === formState.id ? formState : item
             );
             setLeaves(updatedLeaves);
-
+            closeModal(); // Close the edit modal
+            setIsEditSuccessModalOpen(true);
             // Reset the form state
             setFormState({
                 id: "",
@@ -317,22 +321,22 @@ export default function Home({ leavesData }) {
                 wallabag_updated_at: "",
             });
 
-            // Close the modal and show success message
-            closeModal();
-            setUiState((prevState) => ({
-                ...prevState,
-                modalState: {
-                    ...prevState.modalState,
-                    isEditing: false,
-                    successMessage: "Record updated successfully!",
-                },
-            }));
+            // // Close the modal and show success message
+            // closeModal();
+            // setUiState((prevState) => ({
+            //     ...prevState,
+            //     modalState: {
+            //         ...prevState.modalState,
+            //         isEditing: false,
+            //         successMessage: "Record updated successfully!",
+            //     },
+            // }));
 
             // Clear the success message after 3 seconds
             setTimeout(() => {
                 setUiState((prevState) => ({
                     ...prevState,
-                    modalState: { ...prevState.modalState, successMessage: "" },
+                    modalState: {...prevState.modalState, successMessage: ""},
                 }));
             }, 3000);
         } catch (error) {
@@ -341,14 +345,14 @@ export default function Home({ leavesData }) {
         }
     };
 
-        // Opens the delete confirmation modal
-        const handleDelete = (id) => {
-            setUiState((prevState) => ({
-                ...prevState,
-                modalState: {...prevState.modalState, deleteRecord: id},
-            }));
-            openDeleteModal(); // Open the delete confirmation modal
-        };
+    // Opens the delete confirmation modal
+    const handleDelete = (id) => {
+        setUiState((prevState) => ({
+            ...prevState,
+            modalState: {...prevState.modalState, deleteRecord: id},
+        }));
+        openDeleteModal(); // Open the delete confirmation modal
+    };
 
     const deleteRecordFromXano = async (recordId) => {
         try {
@@ -370,301 +374,324 @@ export default function Home({ leavesData }) {
         const updatedLeaves = leaves.filter((item) => item.id !== recordId);
         setLeaves(updatedLeaves); // Remove the record from the list
         closeDeleteModal(); // Close the delete confirmation modal
-        alert("Record deleted successfully.");
+        setIsDeleteSuccessModalOpen(true);
     };
 
-        return (
-            <div className={`${styles.container} ${isDarkMode ? styles.dark : ""}`}>
-                {isLoading && isInitialLoad? (
-                    <div className={styles.loading}>
-                        <div className={styles.spinner}></div>
+    return (
+        <div className={`${styles.container} ${isDarkMode ? styles.dark : ""}`}>
+            {isLoading && isInitialLoad ? (
+                <div className={styles.loading}>
+                    <div className={styles.spinner}></div>
+                </div>
+            ) : (
+                <>
+                    <h1 className={styles.title}>Cassandra Leaves Dashboard</h1>
+
+                    {/* Display success message */}
+                    {uiState.modalState.successMessage && (
+                        <div className={styles.successMessage}>{uiState.modalState.successMessage}</div>
+                    )}
+
+                    {/* Toggle for dark mode */}
+                    <div className={styles.toggleContainer}>
+                        <label className={styles.toggleSwitch}>
+                            <input
+                                type="checkbox"
+                                checked={isDarkMode}
+                                onChange={toggleDarkMode}
+                            />
+                            <span className={styles.slider}></span>
+                        </label>
                     </div>
-                ) : (
-                    <>
-                <h1 className={styles.title}>Cassandra Leaves Dashboard</h1>
 
-                {/* Display success message */}
-                {uiState.modalState.successMessage && (
-                    <div className={styles.successMessage}>{uiState.modalState.successMessage}</div>
-                )}
-
-                {/* Toggle for dark mode */}
-                <div className={styles.toggleContainer}>
-                    <label className={styles.toggleSwitch}>
+                    {/* Search bar and Add Record button */}
+                    <div className={styles.searchAddContainer}>
                         <input
-                            type="checkbox"
-                            checked={isDarkMode}
-                            onChange={toggleDarkMode}
+                            type="text"
+                            placeholder="Search by title..."
+                            value={uiState.searchQuery}
+                            onChange={(e) => handleSearch(e.target.value)}
+                            className={styles.searchBar}
                         />
-                        <span className={styles.slider}></span>
-                    </label>
-                </div>
+                        <button className={styles.addButton} onClick={openModal}>
+                            Add Record
+                        </button>
+                    </div>
 
-                {/* Search bar and Add Record button */}
-                <div className={styles.searchAddContainer}>
-                    <input
-                        type="text"
-                        placeholder="Search by title..."
-                        value={uiState.searchQuery}
-                        onChange={(e) => handleSearch(e.target.value)}
-                        className={styles.searchBar}
-                    />
-                    <button className={styles.addButton} onClick={openModal}>
-                        Add Record
-                    </button>
-                </div>
-
-                {/* Modal for adding or editing a record */}
-                {isModalOpen && (
-                    <div className={`${styles.modal} ${styles.scrollableModal}`}>
-                        <div className={styles.modalContent}>
-                            <h2>{uiState.modalState.isEditing ? "Edit Record" : "Add New Record"}</h2>
-                            {/* Modal Input Fields */}
-                            <input
-                                type="text"
-                                name="content"
-                                placeholder="Content"
-                                value={formState.content}
-                                onChange={handleInputChange}
-                            />
-                            <input
-                                type="text"
-                                name="domain_name"
-                                placeholder="Domain Name"
-                                value={formState.domain_name}
-                                onChange={handleInputChange}
-                            />
-                            <input
-                                type="number"
-                                name="http_status"
-                                placeholder="HTTP Status"
-                                value={formState.http_status}
-                                onChange={(e) => setFormState({ ...formState, http_status: Number(e.target.value) })}
-                            />
-                            <input
-                                type="text"
-                                name="language"
-                                placeholder="Language"
-                                value={formState.language}
-                                onChange={handleInputChange}
-                            />
-                            <input
-                                type="date"
-                                name="last_sourced_from_wallabag"
-                                placeholder="Last Sourced from Wallabag"
-                                value={formState.last_sourced_from_wallabag}
-                                onChange={handleInputChange}
-                            />
-                            <input
-                                type="text"
-                                name="mimetype"
-                                placeholder="MIME Type"
-                                value={formState.mimetype}
-                                onChange={handleInputChange}
-                            />
-                            <input
-                                type="text"
-                                name="preview_picture"
-                                placeholder="Preview Picture URL"
-                                value={formState.preview_picture || ""}
-                                onChange={(e) =>
-                                    setFormState({ ...formState, preview_picture: e.target.value || null })
-                                }
-                            />
-                            <input
-                                type="text"
-                                name="published_by"
-                                placeholder="Published By"
-                                value={formState.published_by}
-                                onChange={handleInputChange}
-                            />
-                            <input
-                                type="text"
-                                name="tags"
-                                placeholder="Tags (comma-separated)"
-                                value={Array.isArray(formState.tags) ? formState.tags.join(", ") : ""}
-                                onChange={(e) =>
-                                    setFormState({ ...formState, tags: e.target.value.split(",").map(tag => tag.trim()) })
-                                }
-                            />
-                            <input
-                                type="text"
-                                name="title"
-                                placeholder="Title"
-                                value={formState.title}
-                                onChange={handleInputChange}
-                            />
-                            <input
-                                type="date"
-                                name="updated_at"
-                                placeholder="Updated At"
-                                value={formState.updated_at}
-                                onChange={handleInputChange}
-                            />
-                            <input
-                                type="text"
-                                name="url"
-                                placeholder="URL"
-                                value={formState.url}
-                                onChange={handleInputChange}
-                            />
-                            <input
-                                type="email"
-                                name="user_email"
-                                placeholder="User Email"
-                                value={formState.user_email}
-                                onChange={handleInputChange}
-                            />
-                            <input
-                                type="number"
-                                name="user_id"
-                                placeholder="User ID"
-                                value={formState.user_id}
-                                onChange={(e) => setFormState({ ...formState, user_id: Number(e.target.value) })}
-                            />
-                            <input
-                                type="text"
-                                name="user_name"
-                                placeholder="User Name"
-                                value={formState.user_name}
-                                onChange={handleInputChange}
-                            />
-                            <input
-                                type="date"
-                                name="wallabag_created_at"
-                                placeholder="Wallabag Created At"
-                                value={formState.wallabag_created_at}
-                                onChange={handleInputChange}
-                            />
-                            <label>
-                                Wallabag is Archived:
+                    {/* Modal for adding or editing a record */}
+                    {isModalOpen && (
+                        <div className={`${styles.modal} ${styles.scrollableModal}`}>
+                            <div className={styles.modalContent}>
+                                <h2>{uiState.modalState.isEditing ? "Edit Record" : "Add New Record"}</h2>
+                                {uiState.modalState.successMessage && (
+                                    <div className={styles.successMessage}>{uiState.modalState.successMessage}</div>
+                                )}
+                                {/* Modal Input Fields */}
                                 <input
-                                    type="checkbox"
-                                    name="wallabag_is_archived"
-                                    checked={formState.wallabag_is_archived}
+                                    type="text"
+                                    name="content"
+                                    placeholder="Content"
+                                    value={formState.content}
+                                    onChange={handleInputChange}
+                                />
+                                <input
+                                    type="text"
+                                    name="domain_name"
+                                    placeholder="Domain Name"
+                                    value={formState.domain_name}
+                                    onChange={handleInputChange}
+                                />
+                                <input
+                                    type="number"
+                                    name="http_status"
+                                    placeholder="HTTP Status"
+                                    value={formState.http_status}
+                                    onChange={(e) => setFormState({...formState, http_status: Number(e.target.value)})}
+                                />
+                                <input
+                                    type="text"
+                                    name="language"
+                                    placeholder="Language"
+                                    value={formState.language}
+                                    onChange={handleInputChange}
+                                />
+                                <input
+                                    type="date"
+                                    name="last_sourced_from_wallabag"
+                                    placeholder="Last Sourced from Wallabag"
+                                    value={formState.last_sourced_from_wallabag}
+                                    onChange={handleInputChange}
+                                />
+                                <input
+                                    type="text"
+                                    name="mimetype"
+                                    placeholder="MIME Type"
+                                    value={formState.mimetype}
+                                    onChange={handleInputChange}
+                                />
+                                <input
+                                    type="text"
+                                    name="preview_picture"
+                                    placeholder="Preview Picture URL"
+                                    value={formState.preview_picture || ""}
                                     onChange={(e) =>
-                                        setFormState({ ...formState, wallabag_is_archived: e.target.checked })
+                                        setFormState({...formState, preview_picture: e.target.value || null})
                                     }
                                 />
-                            </label>
-                            <input
-                                type="date"
-                                name="wallabag_updated_at"
-                                placeholder="Wallabag Updated At"
-                                value={formState.wallabag_updated_at}
-                                onChange={handleInputChange}
-                            />
+                                <input
+                                    type="text"
+                                    name="published_by"
+                                    placeholder="Published By"
+                                    value={formState.published_by}
+                                    onChange={handleInputChange}
+                                />
+                                <input
+                                    type="text"
+                                    name="tags"
+                                    placeholder="Tags (comma-separated)"
+                                    value={Array.isArray(formState.tags) ? formState.tags.join(", ") : ""}
+                                    onChange={(e) =>
+                                        setFormState({
+                                            ...formState,
+                                            tags: e.target.value.split(",").map(tag => tag.trim())
+                                        })
+                                    }
+                                />
+                                <input
+                                    type="text"
+                                    name="title"
+                                    placeholder="Title"
+                                    value={formState.title}
+                                    onChange={handleInputChange}
+                                />
+                                <input
+                                    type="date"
+                                    name="updated_at"
+                                    placeholder="Updated At"
+                                    value={formState.updated_at}
+                                    onChange={handleInputChange}
+                                />
+                                <input
+                                    type="text"
+                                    name="url"
+                                    placeholder="URL"
+                                    value={formState.url}
+                                    onChange={handleInputChange}
+                                />
+                                <input
+                                    type="email"
+                                    name="user_email"
+                                    placeholder="User Email"
+                                    value={formState.user_email}
+                                    onChange={handleInputChange}
+                                />
+                                <input
+                                    type="number"
+                                    name="user_id"
+                                    placeholder="User ID"
+                                    value={formState.user_id}
+                                    onChange={(e) => setFormState({...formState, user_id: Number(e.target.value)})}
+                                />
+                                <input
+                                    type="text"
+                                    name="user_name"
+                                    placeholder="User Name"
+                                    value={formState.user_name}
+                                    onChange={handleInputChange}
+                                />
+                                <input
+                                    type="date"
+                                    name="wallabag_created_at"
+                                    placeholder="Wallabag Created At"
+                                    value={formState.wallabag_created_at}
+                                    onChange={handleInputChange}
+                                />
+                                <label>
+                                    Wallabag is Archived:
+                                    <input
+                                        type="checkbox"
+                                        name="wallabag_is_archived"
+                                        checked={formState.wallabag_is_archived}
+                                        onChange={(e) =>
+                                            setFormState({...formState, wallabag_is_archived: e.target.checked})
+                                        }
+                                    />
+                                </label>
+                                <input
+                                    type="date"
+                                    name="wallabag_updated_at"
+                                    placeholder="Wallabag Updated At"
+                                    value={formState.wallabag_updated_at}
+                                    onChange={handleInputChange}
+                                />
 
 
-                            <div className={styles.modalActions}>
-                                {uiState.modalState.isEditing ? (
-                                    <button onClick={handleUpdateRecord}>Update</button>
-                                ) : (
-                                    <button onClick={handleAddRecord}>Add</button>
+                                <div className={styles.modalActions}>
+                                    {uiState.modalState.isEditing ? (
+                                        <button onClick={handleUpdateRecord}>Update</button>
+                                    ) : (
+                                        <button onClick={handleAddRecord}>Add</button>
+                                    )}
+                                    <button onClick={closeModal}>Cancel</button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Modal for delete confirmation */}
+                    {isDeleteModalOpen && (
+                        <div className={`${styles.modal} ${styles.nonScrollableModal}`}>
+                            <div className={styles.modalContent}>
+                                <h2>Confirm Delete</h2>
+                                {uiState.modalState.successMessage && (
+                                    <div className={styles.successMessage}>{uiState.modalState.successMessage}</div>
                                 )}
-                                <button onClick={closeModal}>Cancel</button>
+                                <p>Are you sure you want to delete this record?</p>
+                                <div className={styles.modalActions}>
+                                    <button onClick={confirmDelete}>Yes, Delete</button>
+                                    <button onClick={closeDeleteModal}>Cancel</button>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                )}
-
-                {/* Modal for delete confirmation */}
-                {isDeleteModalOpen && (
-                    <div className={`${styles.modal} ${styles.nonScrollableModal}`}>
-                        <div className={styles.modalContent}>
-                            <h2>Confirm Delete</h2>
-                            <p>Are you sure you want to delete this record?</p>
-                            <div className={styles.modalActions}>
-                                <button onClick={confirmDelete}>Yes, Delete</button>
-                                <button onClick={closeDeleteModal}>Cancel</button>
-                            </div>
-                        </div>
-                    </div>
-                )}
-
-                {/* Display the records using the Card component */}
-                <div className={styles.grid}>
-                    {paginatedData.map((item) => (
-                        <Card
-                            key={item.id}
-                            item={item}
-                            onEdit={handleEdit}
-                            onDelete={handleDelete}
-                            uiState={uiState}
+                    )}
+                    {/* Success modals */}
+                    {isDeleteSuccessModalOpen && (
+                        <SuccessModal
+                            message="Record deleted successfully."
+                            onClose={() => setIsDeleteSuccessModalOpen(false)}
                         />
-                    ))}
-                </div>
+                    )}
 
-                {/* Pagination controls */}
-                <div className={styles.pagination}>
-                    <button
-                        onClick={() =>
-                            setUiState((prevState) => ({
-                                ...prevState,
-                                currentPage: Math.max(prevState.currentPage - 1, 1),
-                            }))
-                        }
-                        disabled={uiState.currentPage === 1}
-                    >
-                        Previous
-                    </button>
-                    <span>
+                    {isEditSuccessModalOpen && (
+                        <SuccessModal
+                            message="Record updated successfully."
+                            onClose={() => setIsEditSuccessModalOpen(false)}
+                        />
+                    )}
+
+                    {/* Display the records using the Card component */}
+                    <div className={styles.grid}>
+                        {paginatedData.map((item) => (
+                            <Card
+                                key={item.id}
+                                item={item}
+                                onEdit={handleEdit}
+                                onDelete={handleDelete}
+                                uiState={uiState}
+                            />
+                        ))}
+                    </div>
+
+                    {/* Pagination controls */}
+                    <div className={styles.pagination}>
+                        <button
+                            onClick={() =>
+                                setUiState((prevState) => ({
+                                    ...prevState,
+                                    currentPage: Math.max(prevState.currentPage - 1, 1),
+                                }))
+                            }
+                            disabled={uiState.currentPage === 1}
+                        >
+                            Previous
+                        </button>
+                        <span>
                     Page {uiState.currentPage} of {totalPages}
                 </span>
-                    <button
-                        onClick={() =>
-                            setUiState((prevState) => ({
-                                ...prevState,
-                                currentPage: Math.min(prevState.currentPage + 1, totalPages),
-                            }))
-                        }
-                        disabled={uiState.currentPage === totalPages}
-                    >
-                        Next
-                    </button>
-                </div>
-                <div className={styles.goUpButton} onClick={handleGoUp}>
-                    <img src="/up-chevron_8213555.png" alt="Go to top"/>
-                </div>
+                        <button
+                            onClick={() =>
+                                setUiState((prevState) => ({
+                                    ...prevState,
+                                    currentPage: Math.min(prevState.currentPage + 1, totalPages),
+                                }))
+                            }
+                            disabled={uiState.currentPage === totalPages}
+                        >
+                            Next
+                        </button>
+                    </div>
+                    <div className={styles.goUpButton} onClick={handleGoUp}>
+                        <img src="/up-chevron_8213555.png" alt="Go to top"/>
+                    </div>
                 </>
-                    )}
-            </div>
-        );
-    }
+            )}
+        </div>
+    );
+}
 
 // Static data fetching function to get leaves data
-    export async function getStaticProps() {
-        try {
-            let allLeaves = [];
-            let page = 1;
-            const offset = 0;
+export async function getStaticProps() {
+    try {
+        let allLeaves = [];
+        let page = 1;
+        const offset = 0;
 
-            while (true) {
-                const response = await axios.get("https://x8ki-letl-twmt.n7.xano.io/api:WVrFdUAc/cassandra_leaves", {
-                    params: {
-                        page_number: page,
-                        offset: offset,
-                    },
-                });
-
-                const items = response.data.items;
-                if (items.length === 0) break;
-
-                allLeaves = [...allLeaves, ...items];
-                page++;
-            }
-
-            return {
-                props: {
-                    leavesData: allLeaves,
+        while (true) {
+            const response = await axios.get("https://x8ki-letl-twmt.n7.xano.io/api:WVrFdUAc/cassandra_leaves", {
+                params: {
+                    page_number: page,
+                    offset: offset,
                 },
-            };
-        } catch (error) {
-            console.error("Error fetching data from Xano:", error);
-            return {
-                props: {
-                    leavesData: [],
-                },
-            };
+            });
+
+            const items = response.data.items;
+            if (items.length === 0) break;
+
+            allLeaves = [...allLeaves, ...items];
+            page++;
         }
+
+        return {
+            props: {
+                leavesData: allLeaves,
+            },
+        };
+    } catch (error) {
+        console.error("Error fetching data from Xano:", error);
+        return {
+            props: {
+                leavesData: [],
+            },
+        };
     }
+}
