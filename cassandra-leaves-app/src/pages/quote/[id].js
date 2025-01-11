@@ -1,14 +1,17 @@
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import axios from "axios";
+import styles from "../Home.module.css";
+import BackButton from "../../components/BackButton";
 
 export default function QuoteDetail() {
     const router = useRouter();
-    const { id } = router.query;
+    const { id, page } = router.query; // Extract the page query parameter
     const [isDarkMode, setIsDarkMode] = useState(false);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [record, setRecord] = useState(null);
+    const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
         if (!id) {
@@ -69,17 +72,26 @@ export default function QuoteDetail() {
     }, []);
 
     if (loading) {
-        return <div>Loading...</div>;
+        return (
+        <div className={styles.loading}>
+            <div className={styles.spinner}></div>
+        </div>
+        );
     }
 
     if (error) {
         return (
             <div className="container">
-                <div className="back-button" onClick={() => router.push("/")}>
-                    Back
-                </div>
-                <h1 className="title">Error</h1>
-                <p>{error}</p>
+                <BackButton page={page} />
+                {/*<div className="back-button" onClick={() => router.push(`/?page=${page || 1}`)}>*/}
+                {/*    <span>&lt;Back</span>*/}
+                {/*</div>*/}
+                {/*<h1 className="title">Error</h1>*/}
+                <p>{error  && (
+                    <div className={styles.errorMessage}>
+                        {error}
+                    </div>
+                )}</p>
             </div>
         );
     }
@@ -87,9 +99,10 @@ export default function QuoteDetail() {
     if (!record) {
         return (
             <div className="container">
-                <div className="back-button" onClick={() => router.push("/")}>
-                    Back
-                </div>
+                <BackButton page={page} />
+                {/*<div className="back-button" onClick={() => router.push(`/?page=${page || 1}`)}>*/}
+                {/*    Back*/}
+                {/*</div>*/}
                 <h1 className="title">Record Not Found</h1>
                 <p>The record with ID {id} does not exist.</p>
             </div>
@@ -117,7 +130,7 @@ export default function QuoteDetail() {
             </div>
 
             <div className="header-container">
-                <div className="back-button" onClick={() => router.push("/")}>
+                <div className="back-button" onClick={() => router.push(`/?page=${page || 1}`)}>
                     <span>&lt;Back</span>
                 </div>
                 <h1 className="title">{record.title}</h1>
@@ -471,6 +484,28 @@ export default function QuoteDetail() {
                 .info-label, .info-value {
                   text-align: center;
                 }
+              }
+
+              .loading {
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                height: 100vh;
+              }
+
+              .spinner {
+                border: 4px solid transparent;
+                border-top: 4px solid #3498db; /* Blue */
+                border-right: 4px solid #e74c3c; /* Red for a gradient effect */
+                border-radius: 50%;
+                width: 60px; /* Smaller size */
+                height: 60px;
+                animation: spin 1.2s linear infinite; /* Faster spin */
+              }
+
+              @keyframes spin {
+                0% { transform: rotate(0deg); }
+                100% { transform: rotate(360deg); }
               }
             `}</style>
         </div>

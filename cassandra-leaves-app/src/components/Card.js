@@ -2,7 +2,7 @@ import styles from "./Card.module.css";
 import { useDarkMode } from "../contexts/DarkModeContext";
 import Link from "next/link";
 
-const Card = ({ item, onEdit, onDelete }) => {
+const Card = ({ item, onEdit, onDelete, uiState }) => {
     const { isDarkMode } = useDarkMode();
 
     return (
@@ -13,7 +13,7 @@ const Card = ({ item, onEdit, onDelete }) => {
                 className={styles["card-image"]}
             />
             <div className={styles["card-content"]}>
-                <Link href={`/quote/${item.id}`}>
+                <Link href={`/quote/${item.id}?page=${uiState.currentPage}`} className={styles["card-title-whole"]}>
                     <h2
                         className={styles["card-title"]}
                         dangerouslySetInnerHTML={{ __html: item.title }}
