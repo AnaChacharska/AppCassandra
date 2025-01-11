@@ -23,6 +23,7 @@ mongo_client = MongoClient(MONGO_URI)
 mongo_db = mongo_client["cassandra-data"]
 mongo_collection = mongo_db["useful_data"]
 
+
 # Extract data from API
 def extract_data(api_url):
     try:
@@ -33,6 +34,19 @@ def extract_data(api_url):
     except requests.exceptions.RequestException as e:
         logging.error(f"Error during data extraction: {e}")
         return []
+
+
+# Deduplicate data
+def deduplicate_data(data):
+    seen = set()
+    unique_data = []
+    for record in data:
+        record_id = record.get("id")
+        if record_id not in seen:
+            seen.add(record_id)
+            unique_data.append(record)
+    return unique_data
+
 
 # Transform data for Xano and MongoDB
 def transform_data(data):
@@ -63,10 +77,12 @@ def transform_data(data):
             logging.error(f"Error transforming record {record.get('id')}: {e}")
     return metadata, useful_data
 
+
 # Clean HTML content
 def clean_html(html_content):
     soup = BeautifulSoup(html_content, "html.parser")
     return soup.get_text().strip()
+
 
 # Load metadata to Xano
 def load_to_xano(metadata):
@@ -88,6 +104,7 @@ def load_to_xano(metadata):
         except Exception as e:
             logging.error(f"Error loading metadata {record['id']} to Xano: {e}")
 
+
 # Load useful data to MongoDB
 def load_to_mongodb(useful_data):
     try:
@@ -95,6 +112,7 @@ def load_to_mongodb(useful_data):
         logging.info(f"{len(useful_data)} records loaded successfully to MongoDB.")
     except Exception as e:
         logging.error(f"Error loading useful data to MongoDB: {e}")
+
 
 # Main ETL process
 def main():
@@ -112,6 +130,7 @@ def main():
     # Step 3: Load data
     load_to_xano(metadata)
     load_to_mongodb(useful_data)
+
 
 if __name__ == "__main__":
     main()
