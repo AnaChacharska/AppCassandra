@@ -3,6 +3,7 @@ import logging
 from pymongo import MongoClient
 from datetime import datetime
 from bs4 import BeautifulSoup
+import time
 
 # Configure logging
 logging.basicConfig(
@@ -15,14 +16,13 @@ logging.basicConfig(
 )
 
 # Constants
-XANO_API_URL = "https://x8ki-letl-twmt.n7.xano.io/api:WVrFdUAc/cassandra_leaves"
+XANO_API_URL = "https://x8ki-letl-twmt.n7.xano.io/api:_YdzcIS0/metadata_table"
 MONGO_URI = "mongodb+srv://user:user1234*@cluster0.4l4fs.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
 
 # MongoDB setup
 mongo_client = MongoClient(MONGO_URI)
 mongo_db = mongo_client["cassandra-data"]
 mongo_collection = mongo_db["useful_data"]
-
 
 # Extract data from API
 def extract_data(api_url):
@@ -35,7 +35,6 @@ def extract_data(api_url):
         logging.error(f"Error during data extraction: {e}")
         return []
 
-
 # Deduplicate data
 def deduplicate_data(data):
     seen = set()
@@ -46,7 +45,6 @@ def deduplicate_data(data):
             seen.add(record_id)
             unique_data.append(record)
     return unique_data
-
 
 # Transform data for Xano and MongoDB
 def transform_data(data):
@@ -77,16 +75,16 @@ def transform_data(data):
             logging.error(f"Error transforming record {record.get('id')}: {e}")
     return metadata, useful_data
 
-
 # Clean HTML content
 def clean_html(html_content):
     soup = BeautifulSoup(html_content, "html.parser")
     return soup.get_text().strip()
 
-
 # Load metadata to Xano
 def load_to_xano(metadata):
-    for record in metadata:
+    for i, record in enumerate(metadata):
+        if i > 0 and i % 10 == 0:
+            time.sleep(20)  # Wait for 20 seconds after every 10 records
         try:
             payload = {
                 "domain_name": record["domain_name"],
@@ -104,7 +102,6 @@ def load_to_xano(metadata):
         except Exception as e:
             logging.error(f"Error loading metadata {record['id']} to Xano: {e}")
 
-
 # Load useful data to MongoDB
 def load_to_mongodb(useful_data):
     try:
@@ -112,7 +109,6 @@ def load_to_mongodb(useful_data):
         logging.info(f"{len(useful_data)} records loaded successfully to MongoDB.")
     except Exception as e:
         logging.error(f"Error loading useful data to MongoDB: {e}")
-
 
 # Main ETL process
 def main():
@@ -124,13 +120,15 @@ def main():
         logging.error("No data extracted. Exiting pipeline.")
         return
 
-    # Step 2: Transform data
-    metadata, useful_data = transform_data(data)
+    # Step 2: Deduplicate data
+    unique_data = deduplicate_data(data)
 
-    # Step 3: Load data
+    # Step 3: Transform data
+    metadata, useful_data = transform_data(unique_data)
+
+    # Step 4: Load data
     load_to_xano(metadata)
     load_to_mongodb(useful_data)
-
 
 if __name__ == "__main__":
     main()
