@@ -1,15 +1,15 @@
-import {useState, useMemo, useEffect, useContext} from "react";
-import {useModal, useDarkMode} from "../hooks/useModal"; // Custom hooks for managing modal and dark mode
-import Card from "../components/Card"; // Reusable Card component to display data
-import styles from "./Home.module.css"; // CSS module for styling
+import { useState, useMemo, useEffect, useContext } from "react";
+import { useModal, useDarkMode } from "../hooks/useModal";
+import Card from "../components/Card";
+import styles from "./Home.module.css";
 import axios from "axios";
-import {GlobalContext} from "../contexts/GlobalContext";
+import { GlobalContext } from "../contexts/GlobalContext";
 import SuccessModal from "../components/SuccessModal";
 
-export default function Home({leavesData}) {
-    const {leaves, setLeaves} = useContext(GlobalContext);
-    const [error, setError] = useState("");
+export default function Home({ leavesData }) {
+    const { leaves, setLeaves } = useContext(GlobalContext);
     const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState("");
     const [isInitialLoad, setIsInitialLoad] = useState(true);
     const [isDeleteSuccessModalOpen, setIsDeleteSuccessModalOpen] = useState(false);
     const [isEditSuccessModalOpen, setIsEditSuccessModalOpen] = useState(false);
@@ -25,80 +25,71 @@ export default function Home({leavesData}) {
             isDeleteModalOpen: false,
         },
     });
+
     // In-memory cache for API responses
     const cache = {};
 
-    // Fetch data from Xano on component mount
+    // Fetch metadata from Xano with retry logic
+    const fetchMetadata = async (retryCount = 3, delay = 1000) => {
+        try {
+            const response = await axios.get(
+                "https://x8ki-letl-twmt.n7.xano.io/api:_YdzcIS0/metadata_table",
+                { params: {} }
+            );
+            return response.data;
+        } catch (error) {
+            if (error.response && error.response.status === 429 && retryCount > 0) {
+                console.warn(`Rate limit exceeded. Retrying in ${delay}ms...`);
+                await new Promise((resolve) => setTimeout(resolve, delay));
+                return fetchMetadata(retryCount - 1, delay * 2); // Exponential backoff
+            } else {
+                throw error;
+            }
+        }
+    };
+
+    // Fetch metadata from Xano and useful data from the new API route
     useEffect(() => {
-        const urlParams = new URLSearchParams(window.location.search);
-        const page = parseInt(urlParams.get('page'), 10) || 1;
-        setUiState((prevState) => ({
-            ...prevState,
-            currentPage: page,
-        }));
+        const fetchAllData = async () => {
+            try {
+                setIsLoading(true);
+
+                const fetchUsefulData = async () => {
+                    const response = await axios.get("/api/fetchData");
+                    return response.data;
+                };
+
+                const [metadata, usefulData] = await Promise.all([
+                    fetchMetadata(),
+                    fetchUsefulData(),
+                ]);
+
+                const combinedData = usefulData.map((item) => ({
+                    ...item,
+                    ...metadata.find((meta) => meta.domain_name === item.domain_name),
+                }));
+
+                setLeaves(combinedData);
+                setIsInitialLoad(false);
+                setIsLoading(false);
+            } catch (err) {
+                console.error("Error fetching data:", err);
+                setError("Failed to fetch data from APIs");
+                setIsLoading(false);
+            }
+        };
 
         if (leaves.length === 0 && leavesData.length > 0) {
             setLeaves(leavesData);
-            setIsLoading(false);
             setIsInitialLoad(false);
+            setIsLoading(false);
         } else if (leaves.length === 0) {
-            const fetchAllLeaves = async () => {
-                let allLeaves = [];
-                let page = 1;
-                const offset = 0;
-                const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
-
-                const fetchPage = async (page, retries = 5, delayMs = 1000) => {
-                    if (cache[page]) {
-                        return cache[page];
-                    }
-                    try {
-                        const response = await axios.get(
-                            "https://x8ki-letl-twmt.n7.xano.io/api:WVrFdUAc/cassandra_leaves",
-                            {
-                                params: {
-                                    page_number: page,
-                                    offset: offset,
-                                },
-                            }
-                        );
-
-                        const items = response.data.items;
-                        cache[page] = items;
-                        return items;
-                    } catch (error) {
-                        if (error.response && error.response.status === 429 && retries > 0) {
-                            console.warn(`Rate limit exceeded. Retrying in ${delayMs}ms...`);
-                            await delay(delayMs);
-                            return await fetchPage(page, retries - 1, delayMs * 2); // Exponential backoff
-                        } else {
-                            setError("Error fetching data");
-                            console.error("Error fetching data from Xano:", error);
-                            return [];
-                        }
-                    }
-                };
-
-                try {
-                    while (true) {
-                        const items = await fetchPage(page);
-                        if (items.length === 0) break;
-                        allLeaves = [...allLeaves, ...items];
-                        setLeaves(allLeaves);
-                        await delay(1000);
-                        page++;
-                    }
-                } catch (error) {
-                    setError(error.message);
-                }
-                setIsLoading(false);
-                setIsInitialLoad(false);
-            };
-            fetchAllLeaves();
+            fetchAllData();
         } else {
             setIsLoading(false);
         }
     }, [leavesData, leaves, setLeaves]);
+
 
     // State to manage the form fields for adding or editing records
     const [formState, setFormState] = useState({
@@ -320,17 +311,6 @@ export default function Home({leavesData}) {
                 wallabag_is_archived: false,
                 wallabag_updated_at: "",
             });
-
-            // // Close the modal and show success message
-            // closeModal();
-            // setUiState((prevState) => ({
-            //     ...prevState,
-            //     modalState: {
-            //         ...prevState.modalState,
-            //         isEditing: false,
-            //         successMessage: "Record updated successfully!",
-            //     },
-            // }));
 
             // Clear the success message after 3 seconds
             setTimeout(() => {
@@ -658,6 +638,7 @@ export default function Home({leavesData}) {
         </div>
     );
 }
+
 
 // Static data fetching function to get leaves data
 export async function getStaticProps() {
