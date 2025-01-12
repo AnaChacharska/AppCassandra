@@ -30,7 +30,7 @@ export default function Home({ leavesData }) {
     const cache = {};
 
     // Fetch metadata from Xano with retry logic
-    const fetchMetadata = async (retryCount = 3, delay = 1000) => {
+    const fetchMetadata = async (retryCount = 3, delay = 1000, maxDelay = 16000) => {
         try {
             const response = await axios.get(
                 "https://x8ki-letl-twmt.n7.xano.io/api:_YdzcIS0/metadata_table",
@@ -40,9 +40,10 @@ export default function Home({ leavesData }) {
         } catch (error) {
             if (error.response && error.response.status === 429 && retryCount > 0) {
                 console.warn(`Rate limit exceeded. Retrying in ${delay}ms...`);
-                await new Promise((resolve) => setTimeout(resolve, delay));
-                return fetchMetadata(retryCount - 1, delay * 2); // Exponential backoff
+                await new Promise((resolve) => setTimeout(resolve, Math.min(delay, maxDelay)));
+                return fetchMetadata(retryCount - 1, delay * 2, maxDelay); // Exponential backoff with max delay
             } else {
+                console.error('Error fetching metadata:', error);
                 throw error;
             }
         }
@@ -662,9 +663,19 @@ export async function getStaticProps() {
             page++;
         }
 
+        // Fetch metadata from Xano
+        const metadataResponse = await axios.get("https://x8ki-letl-twmt.n7.xano.io/api:_YdzcIS0/metadata_table");
+        const metadata = metadataResponse.data;
+
+        // Combine useful data with metadata
+        const combinedData = allLeaves.map((item) => ({
+            ...item,
+            ...metadata.find((meta) => meta.domain_name === item.domain_name),
+        }));
+
         return {
             props: {
-                leavesData: allLeaves,
+                leavesData: combinedData,
             },
         };
     } catch (error) {
