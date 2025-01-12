@@ -30,7 +30,7 @@ export default function Home({ leavesData }) {
     const cache = {};
 
     // Fetch metadata from Xano with retry logic
-    const fetchMetadata = async (retryCount = 3, delay = 1000, maxDelay = 16000) => {
+    const fetchMetadata = async (retryCount = 5, delay = 1000, maxDelay = 32000) => {
         try {
             const response = await axios.get(
                 "https://x8ki-letl-twmt.n7.xano.io/api:_YdzcIS0/metadata_table",
@@ -39,15 +39,18 @@ export default function Home({ leavesData }) {
             return response.data;
         } catch (error) {
             if (error.response && error.response.status === 429 && retryCount > 0) {
-                console.warn(`Rate limit exceeded. Retrying in ${delay}ms...`);
-                await new Promise((resolve) => setTimeout(resolve, Math.min(delay, maxDelay)));
-                return fetchMetadata(retryCount - 1, delay * 2, maxDelay); // Exponential backoff with max delay
+                const jitter = Math.random() * 1000; // Add random jitter to delay
+                const nextDelay = Math.min(delay * 2, maxDelay) + jitter;
+                console.warn(`Rate limit exceeded. Retrying in ${nextDelay}ms...`);
+                await new Promise((resolve) => setTimeout(resolve, nextDelay));
+                return fetchMetadata(retryCount - 1, nextDelay, maxDelay);
             } else {
                 console.error('Error fetching metadata:', error);
                 throw error;
             }
         }
     };
+
 
     // Fetch metadata from Xano and useful data from the new API route
     useEffect(() => {
