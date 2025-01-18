@@ -24,16 +24,23 @@ mongo_client = MongoClient(MONGO_URI)
 mongo_db = mongo_client["cassandra-data"]
 mongo_collection = mongo_db["useful_data"]
 
-# Extract data from API
-def extract_data(api_url):
-    try:
-        response = requests.get(api_url)
-        response.raise_for_status()
-        logging.info("Data extraction successful.")
-        return response.json()
-    except requests.exceptions.RequestException as e:
-        logging.error(f"Error during data extraction: {e}")
-        return []
+# Extract data from API with retry logic
+def extract_data(api_url, retry_count=5, delay=1, max_delay=32):
+    for attempt in range(retry_count):
+        try:
+            response = requests.get(api_url)
+            response.raise_for_status()
+            logging.info("Data extraction successful.")
+            return response.json()
+        except requests.exceptions.RequestException as e:
+            logging.error(f"Error during data extraction: {e}")
+            if attempt < retry_count - 1:
+                sleep_time = min(delay * (2 ** attempt), max_delay)
+                logging.info(f"Retrying in {sleep_time} seconds...")
+                time.sleep(sleep_time)
+            else:
+                logging.error("Max retries reached. No data extracted.")
+                return []
 
 # Deduplicate data
 def deduplicate_data(data):
@@ -87,6 +94,7 @@ def load_to_xano(metadata):
             time.sleep(20)  # Wait for 20 seconds after every 10 records
         try:
             payload = {
+                "record_id": record["id"],  # Use a custom field for the original `id` field
                 "domain_name": record["domain_name"],
                 "language": record["language"],
                 "tags": record["tags"],

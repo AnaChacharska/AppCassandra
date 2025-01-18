@@ -59,8 +59,13 @@ export default function Home({ leavesData }) {
                 setIsLoading(true);
 
                 const fetchUsefulData = async () => {
-                    const response = await axios.get("/api/fetchData");
-                    return response.data;
+                    try {
+                        const response = await axios.get("/api/fetchData");
+                        return response.data;
+                    } catch (error) {
+                        console.error("Error fetching useful data:", error);
+                        throw error;
+                    }
                 };
 
                 const [metadata, usefulData] = await Promise.all([
@@ -208,7 +213,7 @@ export default function Home({ leavesData }) {
             const response = await axios.post("https://x8ki-letl-twmt.n7.xano.io/api:WVrFdUAc/cassandra_leaves", newRecord);
             if (response.status === 200) {
                 const addedRecord = response.data;
-                setLeaves((prevLeaves) => [addedRecord, ...prevLeaves]); // Add the new record to the top of the list
+                setLeaves((prevLeaves) => [addedRecord, ...prevLeaves]);
                 setFormState({
                     content: "",
                     domain_name: "",
