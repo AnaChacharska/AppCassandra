@@ -203,7 +203,7 @@ export default function Home({ leavesData }) {
 
         try {
             // Add to Xano
-            const xanoResponse = await axios.post("https://x8ki-letl-twmt.n7.xano.io/api:WVrFdUAc/cassandra_leaves", newRecord);
+            const xanoResponse = await axios.post("https://x8ki-letl-twmt.n7.xano.io/api:_YdzcIS0/metadata_table", newRecord);
             if (xanoResponse.status === 200) {
                 const addedRecord = xanoResponse.data;
 
@@ -248,7 +248,7 @@ export default function Home({ leavesData }) {
     };
     const editRecordInXano = async (recordId, updatedData) => {
         try {
-            const url = `https://x8ki-letl-twmt.n7.xano.io/api:WVrFdUAc/cassandra_leaves/${recordId}`;
+            const url = `https://x8ki-letl-twmt.n7.xano.io/api:_YdzcIS0/metadata_table/${recordId}`;
             console.log(`Updating record at URL: ${url}`);
             console.log(`Record ID: ${recordId}`);
             console.log(`Updated Data:`, updatedData);
@@ -331,7 +331,7 @@ export default function Home({ leavesData }) {
 
     const deleteRecordFromXano = async (recordId) => {
         try {
-            const url = `https://x8ki-letl-twmt.n7.xano.io/api:WVrFdUAc/cassandra_leaves/${recordId}`;
+            const url = `https://x8ki-letl-twmt.n7.xano.io/api:_YdzcIS0/metadata_table/${recordId}`;
             const response = await axios.delete(url);
             if (response.status === 200) {
                 console.log('Record deleted successfully from Xano');
