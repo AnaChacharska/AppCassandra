@@ -52,7 +52,6 @@ export default function Home({ leavesData }) {
     };
 
 
-    // Fetch metadata from Xano and useful data from the new API route
     useEffect(() => {
         const fetchAllData = async () => {
             try {
@@ -88,7 +87,7 @@ export default function Home({ leavesData }) {
             }
         };
 
-        if (leaves.length === 0 && leavesData.length > 0) {
+        if (leaves.length === 0 && leavesData && leavesData.length > 0) {
             setLeaves(leavesData);
             setIsInitialLoad(false);
             setIsLoading(false);

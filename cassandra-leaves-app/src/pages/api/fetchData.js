@@ -9,12 +9,19 @@ export default async function handler(req, res) {
     }
 
     try {
+        console.log("Connecting to MongoDB...");
         const client = new MongoClient(uri);
         await client.connect();
+        console.log("Connected to MongoDB");
+
         const database = client.db("your-database");
         const collection = database.collection("useful_data");
+        console.log("Fetching data from collection...");
         const data = await collection.find({}).toArray();
+        console.log("Data fetched successfully");
+
         await client.close();
+        console.log("MongoDB connection closed");
 
         res.status(200).json(data);
     } catch (error) {

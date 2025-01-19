@@ -4,48 +4,29 @@ import axios from "axios";
 import styles from "../Home.module.css";
 import BackButton from "../../components/BackButton";
 
-export default function QuoteDetail() {
+export default function QuoteDetail({ initialRecord }) {
     const router = useRouter();
-    const { id, page } = router.query; // Extract the page query parameter
+    const { id, page } = router.query;
     const [isDarkMode, setIsDarkMode] = useState(false);
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(!initialRecord);
     const [error, setError] = useState(null);
-    const [record, setRecord] = useState(null);
-    const [isLoading, setIsLoading] = useState(true);
+    const [record, setRecord] = useState(initialRecord);
 
     useEffect(() => {
-        if (!id) {
-            console.error("ID is not available");
-            return;
-        }
-        const fetchRecord = async () => {
-            let retries = 3;
-            const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+        if (!id || initialRecord) return;
 
-            while (retries > 0) {
-                try {
-                    setLoading(true);
-                    const response = await axios.get(
-                        `https://x8ki-letl-twmt.n7.xano.io/api:WVrFdUAc/cassandra_leaves/${id}`
-                    );
-                    setRecord(response.data);
-                    setError(null); // Clear any previous errors
-                    setLoading(false);
-                    return;
-                } catch (err) {
-                    if (err.response && err.response.status === 429) {
-                        retries -= 1;
-                        await delay(2000 * (3 - retries)); // Exponential backoff
-                    } else {
-                        console.error("Error fetching record:", err);
-                        setError("Failed to load the record. Please try again.");
-                        setLoading(false);
-                        return;
-                    }
-                }
+        const fetchRecord = async () => {
+            try {
+                setLoading(true);
+                const response = await axios.get(`/api/fetchData?id=${id}`);
+                setRecord(response.data);
+                setError(null);
+                setLoading(false);
+            } catch (err) {
+                console.error("Error fetching record:", err);
+                setError("Failed to load the record. Please try again.");
+                setLoading(false);
             }
-            setError("Rate limit exceeded. Please try again later.");
-            setLoading(false);
         };
 
         fetchRecord();
@@ -73,9 +54,9 @@ export default function QuoteDetail() {
 
     if (loading) {
         return (
-        <div className={styles.loading}>
-            <div className={styles.spinner}></div>
-        </div>
+            <div className={styles.loading}>
+                <div className={styles.spinner}></div>
+            </div>
         );
     }
 
@@ -83,10 +64,6 @@ export default function QuoteDetail() {
         return (
             <div className="container">
                 <BackButton page={page} />
-                {/*<div className="back-button" onClick={() => router.push(`/?page=${page || 1}`)}>*/}
-                {/*    <span>&lt;Back</span>*/}
-                {/*</div>*/}
-                {/*<h1 className="title">Error</h1>*/}
                 <p>{error  && (
                     <div className={styles.errorMessage}>
                         {error}
@@ -100,9 +77,6 @@ export default function QuoteDetail() {
         return (
             <div className="container">
                 <BackButton page={page} />
-                {/*<div className="back-button" onClick={() => router.push(`/?page=${page || 1}`)}>*/}
-                {/*    Back*/}
-                {/*</div>*/}
                 <h1 className="title">Record Not Found</h1>
                 <p>The record with ID {id} does not exist.</p>
             </div>
@@ -112,7 +86,7 @@ export default function QuoteDetail() {
     const toggleDarkMode = () => {
         setIsDarkMode((prevMode) => {
             const newMode = !prevMode;
-            localStorage.setItem("darkMode", newMode); // Save to localStorage
+            localStorage.setItem("darkMode", newMode);
             return newMode;
         });
     };
@@ -140,7 +114,7 @@ export default function QuoteDetail() {
                 <img src={record.preview_picture} alt="Preview" className="preview" />
                 <div dangerouslySetInnerHTML={{ __html: record.content }} className="content" />
                 <div className="tag-cloud">
-                    {record.tags.map((tag, index) => (
+                    {record.tags && record.tags.map((tag, index) => (
                         <span key={index} className="tag">{tag}</span>
                     ))}
                 </div>
@@ -162,6 +136,11 @@ export default function QuoteDetail() {
             <div className="go-top-button" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}>
                 <img src="/up-chevron_8213555.png" alt="Go to top" className="top-icon" />
             </div>
+
+
+
+
+
 
             <style jsx>{`
               @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@500;700&family=DM+Sans&display=swap');
@@ -510,4 +489,61 @@ export default function QuoteDetail() {
             `}</style>
         </div>
     );
+}
+
+export async function getServerSideProps({ params }) {
+    const { id } = params;
+    const { MongoClient } = await import("mongodb");
+
+    try {
+        const client = new MongoClient(process.env.MONGODB_URI);
+        await client.connect();
+
+        const database = client.db("your-database");
+        const collection = database.collection("useful_data");
+
+        const usefulData = await collection.findOne({ id: id });
+        console.log("Useful Data:", usefulData);
+
+        if (!usefulData) {
+            console.error(`No useful data found for ID: ${id}`);
+            return { notFound: true };
+        }
+
+        const metadataResponse = await axios.get(`https://x8ki-letl-twmt.n7.xano.io/api:_YdzcIS0/metadata_table/${id}`);
+        const metadata = metadataResponse.data;
+        console.log("Metadata:", metadata);
+
+        if (!metadata) {
+            console.error(`No metadata found for ID: ${id}`);
+            return { notFound: true };
+        }
+
+        const combinedData = {
+            title: usefulData.title,
+            url: usefulData.url,
+            preview_picture: usefulData.preview_picture,
+            content: usefulData.content,
+            last_sourced_from_wallabag: usefulData.last_sourced_from_wallabag || null,
+            domain_name: metadata.domain_name,
+            language: metadata.language,
+            tags: metadata.tags,
+            http_status: metadata.http_status,
+            published_by: metadata.published_by,
+            user_email: metadata.user_email,
+        };
+
+        return {
+            props: {
+                initialRecord: combinedData,
+            },
+        };
+    } catch (error) {
+        console.error("Error fetching data:", error);
+        return {
+            props: {
+                initialRecord: null,
+            },
+        };
+    }
 }

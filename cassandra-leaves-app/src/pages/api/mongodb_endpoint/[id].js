@@ -39,14 +39,9 @@ export default async (req, res) => {
         const collection = db.collection('useful_data');
         console.log('Selected Collection: useful_data');
 
-        console.log('ID received:', id, 'Is ObjectId valid:', ObjectId.isValid(id));
+        console.log('ID received:', id);
 
-        let query;
-        if (ObjectId.isValid(id)) {
-            query = { _id: new ObjectId(id) };
-        } else {
-            query = { _id: id }; // In case _id is stored as a string
-        }
+        const query = { id: id };
         console.log('Constructed Query:', query);
 
         const record = await collection.findOne(query);
