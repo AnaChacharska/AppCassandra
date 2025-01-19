@@ -202,41 +202,48 @@ export default function Home({ leavesData }) {
         };
 
         try {
-            const response = await axios.post("https://x8ki-letl-twmt.n7.xano.io/api:WVrFdUAc/cassandra_leaves", newRecord);
-            if (response.status === 200) {
-                const addedRecord = response.data;
-                setLeaves((prevLeaves) => [addedRecord, ...prevLeaves]);
-                setFormState({
-                    title: "",
-                    url: "",
-                    preview_picture: "",
-                    content: "",
-                    last_sourced_from_wallabag: "",
-                    domain_name: "",
-                    language: "",
-                    tags: [],
-                    http_status: "",
-                    published_by: "",
-                    user_email: "",
-                }); // Reset the form state
-                closeModal(); // Close the modal
-                setUiState((prevState) => ({
-                    ...prevState,
-                    modalState: {...prevState.modalState, successMessage: "Record added successfully!"},
-                }));
+            // Add to Xano
+            const xanoResponse = await axios.post("https://x8ki-letl-twmt.n7.xano.io/api:WVrFdUAc/cassandra_leaves", newRecord);
+            if (xanoResponse.status === 200) {
+                const addedRecord = xanoResponse.data;
 
-                // Clear the success message after 3 seconds
-                setTimeout(() => {
+                // Add to MongoDB
+                const mongoResponse = await axios.post("/api/addRecord", addedRecord);
+                if (mongoResponse.status === 200) {
+                    setLeaves((prevLeaves) => [addedRecord, ...prevLeaves]);
+                    setFormState({
+                        title: "",
+                        url: "",
+                        preview_picture: "",
+                        content: "",
+                        last_sourced_from_wallabag: "",
+                        domain_name: "",
+                        language: "",
+                        tags: [],
+                        http_status: "",
+                        published_by: "",
+                        user_email: "",
+                    });
+                    closeModal();
                     setUiState((prevState) => ({
                         ...prevState,
-                        modalState: {...prevState.modalState, successMessage: ""},
+                        modalState: { ...prevState.modalState, successMessage: "Record added successfully!" },
                     }));
-                }, 3000);
+
+                    setTimeout(() => {
+                        setUiState((prevState) => ({
+                            ...prevState,
+                            modalState: { ...prevState.modalState, successMessage: "" },
+                        }));
+                    }, 3000);
+                } else {
+                    console.error("Failed to add record to MongoDB");
+                }
             } else {
                 console.error("Failed to add record to Xano");
             }
         } catch (error) {
-            console.error("Error adding record to Xano:", error);
+            console.error("Error adding record:", error);
         }
     };
     const editRecordInXano = async (recordId, updatedData) => {
@@ -258,7 +265,7 @@ export default function Home({ leavesData }) {
 
 // Prepares the form state for editing an existing record
     const handleEdit = (record) => {
-        setFormState(record); // Set the form state with the record's data
+        setFormState(record);
         setUiState((prevState) => ({
             ...prevState,
             modalState: {
@@ -272,40 +279,43 @@ export default function Home({ leavesData }) {
 // Updates the existing record in the list
     const handleUpdateRecord = async () => {
         try {
-            // Update the record in Xano first
+            // Update in Xano
             await editRecordInXano(formState.id, formState);
 
-            // If successful, update the local state
-            const updatedLeaves = leaves.map((item) =>
-                item.id === formState.id ? formState : item
-            );
-            setLeaves(updatedLeaves);
-            closeModal(); // Close the edit modal
-            setIsEditSuccessModalOpen(true);
-            // Reset the form state
-            setFormState({
-                title: "",
-                url: "",
-                preview_picture: "",
-                content: "",
-                last_sourced_from_wallabag: "",
-                domain_name: "",
-                language: "",
-                tags: [],
-                http_status: "",
-                published_by: "",
-                user_email: "",
-            });
+            // Update in MongoDB
+            const mongoResponse = await axios.put(`/api/updateRecord/${formState.id}`, formState);
+            if (mongoResponse.status === 200) {
+                const updatedLeaves = leaves.map((item) =>
+                    item.id === formState.id ? formState : item
+                );
+                setLeaves(updatedLeaves);
+                closeModal();
+                setIsEditSuccessModalOpen(true);
+                setFormState({
+                    title: "",
+                    url: "",
+                    preview_picture: "",
+                    content: "",
+                    last_sourced_from_wallabag: "",
+                    domain_name: "",
+                    language: "",
+                    tags: [],
+                    http_status: "",
+                    published_by: "",
+                    user_email: "",
+                });
 
-            // Clear the success message after 3 seconds
-            setTimeout(() => {
-                setUiState((prevState) => ({
-                    ...prevState,
-                    modalState: {...prevState.modalState, successMessage: ""},
-                }));
-            }, 3000);
+                setTimeout(() => {
+                    setUiState((prevState) => ({
+                        ...prevState,
+                        modalState: { ...prevState.modalState, successMessage: "" },
+                    }));
+                }, 3000);
+            } else {
+                console.error("Failed to update record in MongoDB");
+            }
         } catch (error) {
-            console.error("Error updating record in Xano:", error);
+            console.error("Error updating record:", error);
             alert("Failed to update record. Please try again.");
         }
     };
@@ -335,11 +345,23 @@ export default function Home({ leavesData }) {
 
     const confirmDelete = async () => {
         const recordId = uiState.modalState.deleteRecord;
-        await deleteRecordFromXano(recordId); // Delete the record from Xano
-        const updatedLeaves = leaves.filter((item) => item.id !== recordId);
-        setLeaves(updatedLeaves); // Remove the record from the list
-        closeDeleteModal(); // Close the delete confirmation modal
-        setIsDeleteSuccessModalOpen(true);
+        try {
+            // Delete from Xano
+            await deleteRecordFromXano(recordId);
+
+            // Delete from MongoDB
+            const mongoResponse = await axios.delete(`/api/deleteRecord/${recordId}`);
+            if (mongoResponse.status === 200) {
+                const updatedLeaves = leaves.filter((item) => item.id !== recordId);
+                setLeaves(updatedLeaves);
+                closeDeleteModal();
+                setIsDeleteSuccessModalOpen(true);
+            } else {
+                console.error("Failed to delete record from MongoDB");
+            }
+        } catch (error) {
+            console.error("Error deleting record:", error);
+        }
     };
 
     return (

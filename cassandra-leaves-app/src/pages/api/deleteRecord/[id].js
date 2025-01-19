@@ -1,4 +1,6 @@
 import { MongoClient, ObjectId } from "mongodb";
+import dotenv from 'dotenv';
+import process from "next/dist/build/webpack/loaders/resolve-url-loader/lib/postcss";
 
 export default async function handler(req, res) {
     if (req.method === "DELETE") {
