@@ -189,23 +189,16 @@ export default function Home({ leavesData }) {
 
         const newRecord = {
             title: formState.title,
-            domain_name: formState.domain_name,
-            content: formState.content,
-            http_status: formState.http_status,
-            language: formState.language,
-            last_sourced_from_wallabag: formState.last_sourced_from_wallabag,
-            mimetype: formState.mimetype,
-            preview_picture: formState.preview_picture,
-            published_by: formState.published_by,
-            tags: formState.tags,
-            updated_at: formState.updated_at,
             url: formState.url,
+            preview_picture: formState.preview_picture,
+            content: formState.content,
+            last_sourced_from_wallabag: formState.last_sourced_from_wallabag,
+            domain_name: formState.domain_name,
+            language: formState.language,
+            tags: formState.tags,
+            http_status: formState.http_status,
+            published_by: formState.published_by,
             user_email: formState.user_email,
-            user_id: formState.user_id,
-            user_name: formState.user_name,
-            wallabag_created_at: formState.wallabag_created_at,
-            wallabag_is_archived: formState.wallabag_is_archived,
-            wallabag_updated_at: formState.wallabag_updated_at,
         };
 
         try {
@@ -214,24 +207,17 @@ export default function Home({ leavesData }) {
                 const addedRecord = response.data;
                 setLeaves((prevLeaves) => [addedRecord, ...prevLeaves]);
                 setFormState({
-                    content: "",
-                    domain_name: "",
-                    http_status: "",
-                    language: "",
-                    last_sourced_from_wallabag: "",
-                    mimetype: "",
-                    preview_picture: "",
-                    published_by: "",
-                    tags: [],
                     title: "",
-                    updated_at: "",
                     url: "",
+                    preview_picture: "",
+                    content: "",
+                    last_sourced_from_wallabag: "",
+                    domain_name: "",
+                    language: "",
+                    tags: [],
+                    http_status: "",
+                    published_by: "",
                     user_email: "",
-                    user_id: "",
-                    user_name: "",
-                    wallabag_created_at: "",
-                    wallabag_is_archived: "",
-                    wallabag_updated_at: "",
                 }); // Reset the form state
                 closeModal(); // Close the modal
                 setUiState((prevState) => ({
@@ -298,26 +284,17 @@ export default function Home({ leavesData }) {
             setIsEditSuccessModalOpen(true);
             // Reset the form state
             setFormState({
-                id: "",
-                created_at: "",
-                content: "",
-                domain_name: "",
-                http_status: "",
-                language: "",
-                last_sourced_from_wallabag: "",
-                mimetype: "",
-                preview_picture: null,
-                published_by: "",
-                tags: [],
                 title: "",
-                updated_at: "",
                 url: "",
+                preview_picture: "",
+                content: "",
+                last_sourced_from_wallabag: "",
+                domain_name: "",
+                language: "",
+                tags: [],
+                http_status: "",
+                published_by: "",
                 user_email: "",
-                user_id: "",
-                user_name: "",
-                wallabag_created_at: "",
-                wallabag_is_archived: false,
-                wallabag_updated_at: "",
             });
 
             // Clear the success message after 3 seconds
@@ -417,44 +394,16 @@ export default function Home({ leavesData }) {
                                 {/* Modal Input Fields */}
                                 <input
                                     type="text"
-                                    name="content"
-                                    placeholder="Content"
-                                    value={formState.content}
+                                    name="title"
+                                    placeholder="Title"
+                                    value={formState.title}
                                     onChange={handleInputChange}
                                 />
                                 <input
                                     type="text"
-                                    name="domain_name"
-                                    placeholder="Domain Name"
-                                    value={formState.domain_name}
-                                    onChange={handleInputChange}
-                                />
-                                <input
-                                    type="number"
-                                    name="http_status"
-                                    placeholder="HTTP Status"
-                                    value={formState.http_status}
-                                    onChange={(e) => setFormState({...formState, http_status: Number(e.target.value)})}
-                                />
-                                <input
-                                    type="text"
-                                    name="language"
-                                    placeholder="Language"
-                                    value={formState.language}
-                                    onChange={handleInputChange}
-                                />
-                                <input
-                                    type="date"
-                                    name="last_sourced_from_wallabag"
-                                    placeholder="Last Sourced from Wallabag"
-                                    value={formState.last_sourced_from_wallabag}
-                                    onChange={handleInputChange}
-                                />
-                                <input
-                                    type="text"
-                                    name="mimetype"
-                                    placeholder="MIME Type"
-                                    value={formState.mimetype}
+                                    name="url"
+                                    placeholder="URL"
+                                    value={formState.url}
                                     onChange={handleInputChange}
                                 />
                                 <input
@@ -466,11 +415,31 @@ export default function Home({ leavesData }) {
                                         setFormState({...formState, preview_picture: e.target.value || null})
                                     }
                                 />
+                                <textarea
+                                    name="content"
+                                    placeholder="Content (clean HTML)"
+                                    value={formState.content}
+                                    onChange={handleInputChange}
+                                />
+                                <input
+                                    type="date"
+                                    name="last_sourced_from_wallabag"
+                                    placeholder="Last Sourced from Wallabag"
+                                    value={formState.last_sourced_from_wallabag}
+                                    onChange={handleInputChange}
+                                />
                                 <input
                                     type="text"
-                                    name="published_by"
-                                    placeholder="Published By"
-                                    value={formState.published_by}
+                                    name="domain_name"
+                                    placeholder="Domain Name"
+                                    value={formState.domain_name}
+                                    onChange={handleInputChange}
+                                />
+                                <input
+                                    type="text"
+                                    name="language"
+                                    placeholder="Language"
+                                    value={formState.language}
                                     onChange={handleInputChange}
                                 />
                                 <input
@@ -486,24 +455,17 @@ export default function Home({ leavesData }) {
                                     }
                                 />
                                 <input
-                                    type="text"
-                                    name="title"
-                                    placeholder="Title"
-                                    value={formState.title}
-                                    onChange={handleInputChange}
-                                />
-                                <input
-                                    type="date"
-                                    name="updated_at"
-                                    placeholder="Updated At"
-                                    value={formState.updated_at}
-                                    onChange={handleInputChange}
+                                    type="number"
+                                    name="http_status"
+                                    placeholder="HTTP Status"
+                                    value={formState.http_status}
+                                    onChange={(e) => setFormState({...formState, http_status: Number(e.target.value)})}
                                 />
                                 <input
                                     type="text"
-                                    name="url"
-                                    placeholder="URL"
-                                    value={formState.url}
+                                    name="published_by"
+                                    placeholder="Published By"
+                                    value={formState.published_by}
                                     onChange={handleInputChange}
                                 />
                                 <input
@@ -513,46 +475,6 @@ export default function Home({ leavesData }) {
                                     value={formState.user_email}
                                     onChange={handleInputChange}
                                 />
-                                <input
-                                    type="number"
-                                    name="user_id"
-                                    placeholder="User ID"
-                                    value={formState.user_id}
-                                    onChange={(e) => setFormState({...formState, user_id: Number(e.target.value)})}
-                                />
-                                <input
-                                    type="text"
-                                    name="user_name"
-                                    placeholder="User Name"
-                                    value={formState.user_name}
-                                    onChange={handleInputChange}
-                                />
-                                <input
-                                    type="date"
-                                    name="wallabag_created_at"
-                                    placeholder="Wallabag Created At"
-                                    value={formState.wallabag_created_at}
-                                    onChange={handleInputChange}
-                                />
-                                <label>
-                                    Wallabag is Archived:
-                                    <input
-                                        type="checkbox"
-                                        name="wallabag_is_archived"
-                                        checked={formState.wallabag_is_archived}
-                                        onChange={(e) =>
-                                            setFormState({...formState, wallabag_is_archived: e.target.checked})
-                                        }
-                                    />
-                                </label>
-                                <input
-                                    type="date"
-                                    name="wallabag_updated_at"
-                                    placeholder="Wallabag Updated At"
-                                    value={formState.wallabag_updated_at}
-                                    onChange={handleInputChange}
-                                />
-
 
                                 <div className={styles.modalActions}>
                                     {uiState.modalState.isEditing ? (
