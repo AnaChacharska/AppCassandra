@@ -10,7 +10,7 @@ export default async function handler(req, res) {
         const database = client.db("your-database");
         const collection = database.collection("useful_data");
 
-        const result = await collection.deleteOne({ _id: new ObjectId(id) });
+        const result = await collection.deleteOne({ id });
         client.close();
 
         res.status(200).json(result);

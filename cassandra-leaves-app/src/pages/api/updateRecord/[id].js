@@ -10,8 +10,8 @@ export default async function handler(req, res) {
         const database = client.db("your-database");
         const collection = database.collection("useful_data");
 
-        const updatedRecord = req.body;
-        const result = await collection.updateOne({ _id: new ObjectId(id) }, { $set: updatedRecord });
+        const newRecord = { ...req.body, id: new ObjectId().toString() };
+        const result = await collection.insertOne(newRecord);
         client.close();
 
         res.status(200).json(result);
