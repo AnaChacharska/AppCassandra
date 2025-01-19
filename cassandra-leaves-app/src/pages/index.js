@@ -5,6 +5,7 @@ import styles from "./Home.module.css";
 import axios from "axios";
 import { GlobalContext } from "../contexts/GlobalContext";
 import SuccessModal from "../components/SuccessModal";
+import MetadataTable from "../components/MetadataTable";
 
 export default function Home({ leavesData }) {
     const { leaves, setLeaves } = useContext(GlobalContext);
@@ -609,6 +610,8 @@ export default function Home({ leavesData }) {
                             />
                         ))}
                     </div>
+
+                    {/*<MetadataTable metadata={leavesData} />*/}    {/* Uncomment this line to display the metadata table */}
 
                     {/* Pagination controls */}
                     <div className={styles.pagination}>
