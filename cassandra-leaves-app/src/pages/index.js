@@ -246,11 +246,11 @@ export default function Home({ leavesData }) {
             console.error("Error adding record:", error);
         }
     };
-    const editRecordInXano = async (record_id, updatedData) => {
+    const editRecordInXano = async (id, updatedData) => {
         try {
-            const url = `https://x8ki-letl-twmt.n7.xano.io/api:_YdzcIS0/metadata_table/${record_id}`;
+            const url = `https://x8ki-letl-twmt.n7.xano.io/api:_YdzcIS0/metadata_table/${id}`;
             console.log(`Updating record at URL: ${url}`);
-            console.log(`Record ID: ${record_id}`);
+            console.log(`Record ID: ${id}`);
             console.log(`Updated Data:`, updatedData);
             const response = await axios.patch(url, updatedData);
             if (response.status === 200) {
@@ -283,7 +283,7 @@ export default function Home({ leavesData }) {
             await editRecordInXano(formState.id, formState);
 
             // Update in MongoDB
-            const mongoResponse = await axios.put(`/api/updateRecord/${formState.id}`, formState);
+            const mongoResponse = await axios.patch(`/api/updateRecord/${formState.id}`, formState);
             if (mongoResponse.status === 200) {
                 const updatedLeaves = leaves.map((item) =>
                     item.id === formState.id ? formState : item
