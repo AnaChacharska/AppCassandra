@@ -1,6 +1,8 @@
 import {MongoClient, ObjectId} from "mongodb";
-import process from "next/dist/build/webpack/loaders/resolve-url-loader/lib/postcss";
 import dotenv from 'dotenv';
+
+dotenv.config();
+
 export default async function handler(req, res) {
     if (req.method === "POST") {
         const client = new MongoClient(process.env.MONGODB_URI);
