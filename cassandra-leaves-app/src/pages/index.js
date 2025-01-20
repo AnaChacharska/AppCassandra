@@ -282,11 +282,15 @@ export default function Home({ leavesData }) {
             // Update in Xano
             await editRecordInXano(formState.id, formState);
 
+            // Extract only the fields relevant to MongoDB
+            const { title, url, preview_picture, content, last_sourced_from_wallabag } = formState;
+            const mongoData = { title, url, preview_picture, content, last_sourced_from_wallabag };
+
             // Update in MongoDB
-            const mongoResponse = await axios.patch(`/api/updateRecord/${formState.id}`, formState);
+            const mongoResponse = await axios.patch(`/api/updateRecord/${formState.id}`, mongoData);
             if (mongoResponse.status === 200) {
                 const updatedLeaves = leaves.map((item) =>
-                    item.id === formState.id ? formState : item
+                    item.id === formState.id ? { ...item, ...mongoData } : item
                 );
                 setLeaves(updatedLeaves);
                 closeModal();
