@@ -246,11 +246,11 @@ export default function Home({ leavesData }) {
             console.error("Error adding record:", error);
         }
     };
-    const editRecordInXano = async (recordId, updatedData) => {
+    const editRecordInXano = async (record_id, updatedData) => {
         try {
-            const url = `https://x8ki-letl-twmt.n7.xano.io/api:_YdzcIS0/metadata_table/${recordId}`;
+            const url = `https://x8ki-letl-twmt.n7.xano.io/api:_YdzcIS0/metadata_table/${record_id}`;
             console.log(`Updating record at URL: ${url}`);
-            console.log(`Record ID: ${recordId}`);
+            console.log(`Record ID: ${record_id}`);
             console.log(`Updated Data:`, updatedData);
             const response = await axios.patch(url, updatedData);
             if (response.status === 200) {
@@ -329,30 +329,45 @@ export default function Home({ leavesData }) {
         openDeleteModal(); // Open the delete confirmation modal
     };
 
-    const deleteRecordFromXano = async (recordId) => {
+    const deleteRecordFromXano = async (id, retryCount = 5, delay = 1000, maxDelay = 32000) => {
         try {
-            const url = `https://x8ki-letl-twmt.n7.xano.io/api:_YdzcIS0/metadata_table/${recordId}`;
+            if (!id) {
+                console.error('Record ID is missing');
+                return;
+            }
+
+            const url = `https://x8ki-letl-twmt.n7.xano.io/api:_YdzcIS0/metadata_table/${id}`;
+            console.log(`Deleting record with ID: ${id} at URL: ${url}`);
+
             const response = await axios.delete(url);
             if (response.status === 200) {
                 console.log('Record deleted successfully from Xano');
             } else {
-                console.error('Failed to delete record from Xano');
+                console.error('Failed to delete record from Xano', response);
             }
         } catch (error) {
-            console.error('Error deleting record from Xano:', error);
+            if (error.response && error.response.status === 429 && retryCount > 0) {
+                const jitter = Math.random() * 1000; // Add random jitter to delay
+                const nextDelay = Math.min(delay * 2, maxDelay) + jitter;
+                console.warn(`Rate limit exceeded. Retrying in ${nextDelay}ms...`);
+                await new Promise((resolve) => setTimeout(resolve, nextDelay));
+                return deleteRecordFromXano(id, retryCount - 1, nextDelay, maxDelay);
+            } else {
+                console.error('Error deleting record from Xano:', error);
+            }
         }
     };
 
     const confirmDelete = async () => {
-        const recordId = uiState.modalState.deleteRecord;
+        const id = uiState.modalState.deleteRecord;
         try {
             // Delete from Xano
-            await deleteRecordFromXano(recordId);
+            await deleteRecordFromXano(id);
 
             // Delete from MongoDB
-            const mongoResponse = await axios.delete(`/api/deleteRecord/${recordId}`);
+            const mongoResponse = await axios.delete(`/api/deleteRecord/${id}`);
             if (mongoResponse.status === 200) {
-                const updatedLeaves = leaves.filter((item) => item.id !== recordId);
+                const updatedLeaves = leaves.filter((item) => item.id !== id);
                 setLeaves(updatedLeaves);
                 closeDeleteModal();
                 setIsDeleteSuccessModalOpen(true);
