@@ -1,0 +1,30 @@
+.metadataTableContainer {
+    margin-top: 20px;
+}
+
+.searchBar {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+
+.metadataTable {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.metadataTable th, .metadataTable td {
+    border: 1px solid #ccc;
+    padding: 10px;
+    text-align: left;
+}
+
+.metadataTable th {
+    background-color: #f4f4f4;
+}
+
+.metadataTable tbody tr:nth-child(even) {
+    background-color: #f9f9f9;
+}

@@ -1,15 +1,15 @@
-import {useState, useMemo, useEffect, useContext} from "react";
-import {useModal, useDarkMode} from "../hooks/useModal"; // Custom hooks for managing modal and dark mode
-import Card from "../components/Card"; // Reusable Card component to display data
-import styles from "./Home.module.css"; // CSS module for styling
+import { useState, useMemo, useEffect, useContext } from "react";
+import { useModal, useDarkMode } from "../hooks/useModal";
+import Card from "../components/Card";
+import styles from "./Home.module.css";
 import axios from "axios";
-import {GlobalContext} from "../contexts/GlobalContext";
+import { GlobalContext } from "../contexts/GlobalContext";
 import SuccessModal from "../components/SuccessModal";
 
-export default function Home({leavesData}) {
-    const {leaves, setLeaves} = useContext(GlobalContext);
-    const [error, setError] = useState("");
+export default function Home({ leavesData }) {
+    const { leaves, setLeaves } = useContext(GlobalContext);
     const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState("");
     const [isInitialLoad, setIsInitialLoad] = useState(true);
     const [isDeleteSuccessModalOpen, setIsDeleteSuccessModalOpen] = useState(false);
     const [isEditSuccessModalOpen, setIsEditSuccessModalOpen] = useState(false);
@@ -25,80 +25,112 @@ export default function Home({leavesData}) {
             isDeleteModalOpen: false,
         },
     });
+
     // In-memory cache for API responses
     const cache = {};
 
-    // Fetch data from Xano on component mount
+    // Fetch metadata from Xano with retry logic
+    const fetchMetadata = async (retryCount = 5, delay = 1000, maxDelay = 32000) => {
+        try {
+            const response = await axios.get(
+                "https://x8ki-letl-twmt.n7.xano.io/api:_YdzcIS0/metadata_table",
+                { params: {} }
+            );
+            return response.data;
+        } catch (error) {
+            if (error.response && error.response.status === 429 && retryCount > 0) {
+                const jitter = Math.random() * 1000; // Add random jitter to delay
+                const nextDelay = Math.min(delay * 2, maxDelay) + jitter;
+                console.warn(`Rate limit exceeded. Retrying in ${nextDelay}ms...`);
+                await new Promise((resolve) => setTimeout(resolve, nextDelay));
+                return fetchMetadata(retryCount - 1, nextDelay, maxDelay);
+            } else {
+                console.error('Error fetching metadata:', error);
+                throw error;
+            }
+        }
+    };
+
+
     useEffect(() => {
-        const urlParams = new URLSearchParams(window.location.search);
-        const page = parseInt(urlParams.get('page'), 10) || 1;
-        setUiState((prevState) => ({
-            ...prevState,
-            currentPage: page,
-        }));
+        const fetchAllData = async () => {
+            try {
+                setIsLoading(true);
 
-        if (leaves.length === 0 && leavesData.length > 0) {
-            setLeaves(leavesData);
-            setIsLoading(false);
-            setIsInitialLoad(false);
-        } else if (leaves.length === 0) {
-            const fetchAllLeaves = async () => {
-                let allLeaves = [];
-                let page = 1;
-                const offset = 0;
-                const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
-
-                const fetchPage = async (page, retries = 5, delayMs = 1000) => {
-                    if (cache[page]) {
-                        return cache[page];
-                    }
+                const fetchUsefulData = async () => {
                     try {
-                        const response = await axios.get(
-                            "https://x8ki-letl-twmt.n7.xano.io/api:WVrFdUAc/cassandra_leaves",
-                            {
-                                params: {
-                                    page_number: page,
-                                    offset: offset,
-                                },
-                            }
-                        );
-
-                        const items = response.data.items;
-                        cache[page] = items;
-                        return items;
+                        const response = await axios.get("/api/fetchData");
+                        return response.data;
                     } catch (error) {
-                        if (error.response && error.response.status === 429 && retries > 0) {
-                            console.warn(`Rate limit exceeded. Retrying in ${delayMs}ms...`);
-                            await delay(delayMs);
-                            return await fetchPage(page, retries - 1, delayMs * 2); // Exponential backoff
-                        } else {
-                            setError("Error fetching data");
-                            console.error("Error fetching data from Xano:", error);
-                            return [];
-                        }
+                        console.error("Error fetching useful data:", error);
+                        throw error;
                     }
                 };
 
-                try {
-                    while (true) {
-                        const items = await fetchPage(page);
-                        if (items.length === 0) break;
-                        allLeaves = [...allLeaves, ...items];
-                        setLeaves(allLeaves);
-                        await delay(1000);
-                        page++;
-                    }
-                } catch (error) {
-                    setError(error.message);
-                }
-                setIsLoading(false);
+                const [metadata, usefulData] = await Promise.all([
+                    fetchMetadata(),
+                    fetchUsefulData(),
+                ]);
+
+                const combinedData = usefulData.map((item) => ({
+                    ...item,
+                    ...metadata.find((meta) => meta.domain_name === item.domain_name),
+                }));
+
+                setLeaves(combinedData);
                 setIsInitialLoad(false);
-            };
-            fetchAllLeaves();
+                setIsLoading(false);
+            } catch (err) {
+                console.error("Error fetching data:", err);
+                setError("Failed to fetch data from APIs");
+                setIsLoading(false);
+            }
+        };
+
+        if (leaves.length === 0 && leavesData && leavesData.length > 0) {
+            setLeaves(leavesData);
+            setIsInitialLoad(false);
+            setIsLoading(false);
+        } else if (leaves.length === 0) {
+            fetchAllData();
         } else {
             setIsLoading(false);
         }
     }, [leavesData, leaves, setLeaves]);
+
+    const openModalForAdd = () => {
+        setFormState({
+            id: "",
+            created_at: "",
+            content: "",
+            domain_name: "",
+            http_status: "",
+            language: "",
+            last_sourced_from_wallabag: "",
+            mimetype: "",
+            preview_picture: null,
+            published_by: "",
+            tags: [],
+            title: "",
+            updated_at: "",
+            url: "",
+            user_email: "",
+            user_id: "",
+            user_name: "",
+            wallabag_created_at: "",
+            wallabag_is_archived: false,
+            wallabag_updated_at: "",
+        });
+        setUiState((prevState) => ({
+            ...prevState,
+            modalState: {
+                ...prevState.modalState,
+                isEditing: false,
+            },
+        }));
+        openModal();
+    };
+
 
     // State to manage the form fields for adding or editing records
     const [formState, setFormState] = useState({
@@ -139,7 +171,7 @@ export default function Home({leavesData}) {
     // Memoized value to filter the leaves data based on the search query
     const filteredData = useMemo(() => {
         return (leaves || []).filter((item) =>
-            item.title.toLowerCase().includes(uiState.searchQuery.toLowerCase())
+            item.title && item.title.toLowerCase().includes(uiState.searchQuery.toLowerCase())
         );
     }, [leaves, uiState.searchQuery]);
 
@@ -190,75 +222,68 @@ export default function Home({leavesData}) {
 
         const newRecord = {
             title: formState.title,
-            domain_name: formState.domain_name,
-            content: formState.content,
-            http_status: formState.http_status,
-            language: formState.language,
-            last_sourced_from_wallabag: formState.last_sourced_from_wallabag,
-            mimetype: formState.mimetype,
-            preview_picture: formState.preview_picture,
-            published_by: formState.published_by,
-            tags: formState.tags,
-            updated_at: formState.updated_at,
             url: formState.url,
+            preview_picture: formState.preview_picture,
+            content: formState.content,
+            last_sourced_from_wallabag: formState.last_sourced_from_wallabag,
+            domain_name: formState.domain_name,
+            language: formState.language,
+            tags: formState.tags,
+            http_status: formState.http_status,
+            published_by: formState.published_by,
             user_email: formState.user_email,
-            user_id: formState.user_id,
-            user_name: formState.user_name,
-            wallabag_created_at: formState.wallabag_created_at,
-            wallabag_is_archived: formState.wallabag_is_archived,
-            wallabag_updated_at: formState.wallabag_updated_at,
         };
 
         try {
-            const response = await axios.post("https://x8ki-letl-twmt.n7.xano.io/api:WVrFdUAc/cassandra_leaves", newRecord);
-            if (response.status === 200) {
-                const addedRecord = response.data;
-                setLeaves((prevLeaves) => [addedRecord, ...prevLeaves]); // Add the new record to the top of the list
-                setFormState({
-                    content: "",
-                    domain_name: "",
-                    http_status: "",
-                    language: "",
-                    last_sourced_from_wallabag: "",
-                    mimetype: "",
-                    preview_picture: "",
-                    published_by: "",
-                    tags: [],
-                    title: "",
-                    updated_at: "",
-                    url: "",
-                    user_email: "",
-                    user_id: "",
-                    user_name: "",
-                    wallabag_created_at: "",
-                    wallabag_is_archived: "",
-                    wallabag_updated_at: "",
-                }); // Reset the form state
-                closeModal(); // Close the modal
-                setUiState((prevState) => ({
-                    ...prevState,
-                    modalState: {...prevState.modalState, successMessage: "Record added successfully!"},
-                }));
+            // Add to Xano
+            const xanoResponse = await axios.post("https://x8ki-letl-twmt.n7.xano.io/api:_YdzcIS0/metadata_table", newRecord);
+            if (xanoResponse.status === 200) {
+                const addedRecord = xanoResponse.data;
 
-                // Clear the success message after 3 seconds
-                setTimeout(() => {
+                // Add to MongoDB
+                const mongoResponse = await axios.post("/api/addRecord", addedRecord);
+                if (mongoResponse.status === 200) {
+                    setLeaves((prevLeaves) => [addedRecord, ...prevLeaves]);
+                    setFormState({
+                        title: "",
+                        url: "",
+                        preview_picture: "",
+                        content: "",
+                        last_sourced_from_wallabag: "",
+                        domain_name: "",
+                        language: "",
+                        tags: [],
+                        http_status: "",
+                        published_by: "",
+                        user_email: "",
+                    });
+                    closeModal();
                     setUiState((prevState) => ({
                         ...prevState,
-                        modalState: {...prevState.modalState, successMessage: ""},
+                        modalState: { ...prevState.modalState, successMessage: "Record added successfully!" },
                     }));
-                }, 3000);
+
+                    setTimeout(() => {
+                        setUiState((prevState) => ({
+                            ...prevState,
+                            modalState: { ...prevState.modalState, successMessage: "" },
+                        }));
+                    }, 3000);
+                } else {
+                    console.error("Failed to add record to MongoDB");
+                }
             } else {
                 console.error("Failed to add record to Xano");
             }
         } catch (error) {
-            console.error("Error adding record to Xano:", error);
+            console.error("Error adding record:", error);
         }
     };
-    const editRecordInXano = async (recordId, updatedData) => {
+    const editRecordInXano = async (id, updatedData) => {
         try {
-            const url = `https://x8ki-letl-twmt.n7.xano.io/api:WVrFdUAc/cassandra_leaves/${recordId}`;
+            const url = `https://x8ki-letl-twmt.n7.xano.io/api:_YdzcIS0/metadata_table/${id}`;
             console.log(`Updating record at URL: ${url}`);
-            console.log(`Record ID: ${recordId}`);
+            console.log(`Record ID: ${id}`);
             console.log(`Updated Data:`, updatedData);
             const response = await axios.patch(url, updatedData);
             if (response.status === 200) {
@@ -273,7 +298,7 @@ export default function Home({leavesData}) {
 
 // Prepares the form state for editing an existing record
     const handleEdit = (record) => {
-        setFormState(record); // Set the form state with the record's data
+        setFormState(record);
         setUiState((prevState) => ({
             ...prevState,
             modalState: {
@@ -287,60 +312,47 @@ export default function Home({leavesData}) {
 // Updates the existing record in the list
     const handleUpdateRecord = async () => {
         try {
-            // Update the record in Xano first
+            // Update in Xano
             await editRecordInXano(formState.id, formState);
 
-            // If successful, update the local state
-            const updatedLeaves = leaves.map((item) =>
-                item.id === formState.id ? formState : item
-            );
-            setLeaves(updatedLeaves);
-            closeModal(); // Close the edit modal
-            setIsEditSuccessModalOpen(true);
-            // Reset the form state
-            setFormState({
-                id: "",
-                created_at: "",
-                content: "",
-                domain_name: "",
-                http_status: "",
-                language: "",
-                last_sourced_from_wallabag: "",
-                mimetype: "",
-                preview_picture: null,
-                published_by: "",
-                tags: [],
-                title: "",
-                updated_at: "",
-                url: "",
-                user_email: "",
-                user_id: "",
-                user_name: "",
-                wallabag_created_at: "",
-                wallabag_is_archived: false,
-                wallabag_updated_at: "",
-            });
+            // Extract only the fields relevant to MongoDB
+            const { title, url, preview_picture, content, last_sourced_from_wallabag } = formState;
+            const mongoData = { title, url, preview_picture, content, last_sourced_from_wallabag };
 
-            // // Close the modal and show success message
-            // closeModal();
-            // setUiState((prevState) => ({
-            //     ...prevState,
-            //     modalState: {
-            //         ...prevState.modalState,
-            //         isEditing: false,
-            //         successMessage: "Record updated successfully!",
-            //     },
-            // }));
+            // Update in MongoDB
+            const mongoResponse = await axios.patch(`/api/updateRecord/${formState.id}`, mongoData);
+            if (mongoResponse.status === 200) {
+                const updatedLeaves = leaves.map((item) =>
+                    item.id === formState.id ? { ...item, ...mongoData } : item
+                );
+                setLeaves(updatedLeaves);
+                closeModal();
+                setIsEditSuccessModalOpen(true);
+                setFormState({
+                    title: "",
+                    url: "",
+                    preview_picture: "",
+                    content: "",
+                    last_sourced_from_wallabag: "",
+                    domain_name: "",
+                    language: "",
+                    tags: [],
+                    http_status: "",
+                    published_by: "",
+                    user_email: "",
+                });
 
-            // Clear the success message after 3 seconds
-            setTimeout(() => {
-                setUiState((prevState) => ({
-                    ...prevState,
-                    modalState: {...prevState.modalState, successMessage: ""},
-                }));
-            }, 3000);
+                setTimeout(() => {
+                    setUiState((prevState) => ({
+                        ...prevState,
+                        modalState: { ...prevState.modalState, successMessage: "" },
+                    }));
+                }, 3000);
+            } else {
+                console.error("Failed to update record in MongoDB");
+            }
         } catch (error) {
-            console.error("Error updating record in Xano:", error);
+            console.error("Error updating record:", error);
             alert("Failed to update record. Please try again.");
         }
     };
@@ -354,27 +366,54 @@ export default function Home({leavesData}) {
         openDeleteModal(); // Open the delete confirmation modal
     };
 
-    const deleteRecordFromXano = async (recordId) => {
+    const deleteRecordFromXano = async (id, retryCount = 5, delay = 1000, maxDelay = 32000) => {
         try {
-            const url = `https://x8ki-letl-twmt.n7.xano.io/api:WVrFdUAc/cassandra_leaves/${recordId}`;
+            if (!id) {
+                console.error('Record ID is missing');
+                return;
+            }
+
+            const url = `https://x8ki-letl-twmt.n7.xano.io/api:_YdzcIS0/metadata_table/${id}`;
+            console.log(`Deleting record with ID: ${id} at URL: ${url}`);
+
             const response = await axios.delete(url);
             if (response.status === 200) {
                 console.log('Record deleted successfully from Xano');
             } else {
-                console.error('Failed to delete record from Xano');
+                console.error('Failed to delete record from Xano', response);
             }
         } catch (error) {
-            console.error('Error deleting record from Xano:', error);
+            if (error.response && error.response.status === 429 && retryCount > 0) {
+                const jitter = Math.random() * 1000; // Add random jitter to delay
+                const nextDelay = Math.min(delay * 2, maxDelay) + jitter;
+                console.warn(`Rate limit exceeded. Retrying in ${nextDelay}ms...`);
+                await new Promise((resolve) => setTimeout(resolve, nextDelay));
+                return deleteRecordFromXano(id, retryCount - 1, nextDelay, maxDelay);
+            } else {
+                console.error('Error deleting record from Xano:', error);
+            }
         }
     };
 
     const confirmDelete = async () => {
-        const recordId = uiState.modalState.deleteRecord;
-        await deleteRecordFromXano(recordId); // Delete the record from Xano
-        const updatedLeaves = leaves.filter((item) => item.id !== recordId);
-        setLeaves(updatedLeaves); // Remove the record from the list
-        closeDeleteModal(); // Close the delete confirmation modal
-        setIsDeleteSuccessModalOpen(true);
+        const id = uiState.modalState.deleteRecord;
+        try {
+            // Delete from Xano
+            await deleteRecordFromXano(id);
+
+            // Delete from MongoDB
+            const mongoResponse = await axios.delete(`/api/deleteRecord/${id}`);
+            if (mongoResponse.status === 200) {
+                const updatedLeaves = leaves.filter((item) => item.id !== id);
+                setLeaves(updatedLeaves);
+                closeDeleteModal();
+                setIsDeleteSuccessModalOpen(true);
+            } else {
+                console.error("Failed to delete record from MongoDB");
+            }
+        } catch (error) {
+            console.error("Error deleting record:", error);
+        }
     };
 
     return (
@@ -413,7 +452,7 @@ export default function Home({leavesData}) {
                             onChange={(e) => handleSearch(e.target.value)}
                             className={styles.searchBar}
                         />
-                        <button className={styles.addButton} onClick={openModal}>
+                        <button className={styles.addButton} onClick={openModalForAdd}>
                             Add Record
                         </button>
                     </div>
@@ -429,44 +468,16 @@ export default function Home({leavesData}) {
                                 {/* Modal Input Fields */}
                                 <input
                                     type="text"
-                                    name="content"
-                                    placeholder="Content"
-                                    value={formState.content}
+                                    name="title"
+                                    placeholder="Title"
+                                    value={formState.title}
                                     onChange={handleInputChange}
                                 />
                                 <input
                                     type="text"
-                                    name="domain_name"
-                                    placeholder="Domain Name"
-                                    value={formState.domain_name}
-                                    onChange={handleInputChange}
-                                />
-                                <input
-                                    type="number"
-                                    name="http_status"
-                                    placeholder="HTTP Status"
-                                    value={formState.http_status}
-                                    onChange={(e) => setFormState({...formState, http_status: Number(e.target.value)})}
-                                />
-                                <input
-                                    type="text"
-                                    name="language"
-                                    placeholder="Language"
-                                    value={formState.language}
-                                    onChange={handleInputChange}
-                                />
-                                <input
-                                    type="date"
-                                    name="last_sourced_from_wallabag"
-                                    placeholder="Last Sourced from Wallabag"
-                                    value={formState.last_sourced_from_wallabag}
-                                    onChange={handleInputChange}
-                                />
-                                <input
-                                    type="text"
-                                    name="mimetype"
-                                    placeholder="MIME Type"
-                                    value={formState.mimetype}
+                                    name="url"
+                                    placeholder="URL"
+                                    value={formState.url}
                                     onChange={handleInputChange}
                                 />
                                 <input
@@ -478,11 +489,31 @@ export default function Home({leavesData}) {
                                         setFormState({...formState, preview_picture: e.target.value || null})
                                     }
                                 />
+                                <textarea
+                                    name="content"
+                                    placeholder="Content (clean HTML)"
+                                    value={formState.content}
+                                    onChange={handleInputChange}
+                                />
+                                <input
+                                    type="date"
+                                    name="last_sourced_from_wallabag"
+                                    placeholder="Last Sourced from Wallabag"
+                                    value={formState.last_sourced_from_wallabag}
+                                    onChange={handleInputChange}
+                                />
                                 <input
                                     type="text"
-                                    name="published_by"
-                                    placeholder="Published By"
-                                    value={formState.published_by}
+                                    name="domain_name"
+                                    placeholder="Domain Name"
+                                    value={formState.domain_name}
+                                    onChange={handleInputChange}
+                                />
+                                <input
+                                    type="text"
+                                    name="language"
+                                    placeholder="Language"
+                                    value={formState.language}
                                     onChange={handleInputChange}
                                 />
                                 <input
@@ -498,24 +529,17 @@ export default function Home({leavesData}) {
                                     }
                                 />
                                 <input
-                                    type="text"
-                                    name="title"
-                                    placeholder="Title"
-                                    value={formState.title}
-                                    onChange={handleInputChange}
-                                />
-                                <input
-                                    type="date"
-                                    name="updated_at"
-                                    placeholder="Updated At"
-                                    value={formState.updated_at}
-                                    onChange={handleInputChange}
+                                    type="number"
+                                    name="http_status"
+                                    placeholder="HTTP Status"
+                                    value={formState.http_status}
+                                    onChange={(e) => setFormState({...formState, http_status: Number(e.target.value)})}
                                 />
                                 <input
                                     type="text"
-                                    name="url"
-                                    placeholder="URL"
-                                    value={formState.url}
+                                    name="published_by"
+                                    placeholder="Published By"
+                                    value={formState.published_by}
                                     onChange={handleInputChange}
                                 />
                                 <input
@@ -525,46 +549,6 @@ export default function Home({leavesData}) {
                                     value={formState.user_email}
                                     onChange={handleInputChange}
                                 />
-                                <input
-                                    type="number"
-                                    name="user_id"
-                                    placeholder="User ID"
-                                    value={formState.user_id}
-                                    onChange={(e) => setFormState({...formState, user_id: Number(e.target.value)})}
-                                />
-                                <input
-                                    type="text"
-                                    name="user_name"
-                                    placeholder="User Name"
-                                    value={formState.user_name}
-                                    onChange={handleInputChange}
-                                />
-                                <input
-                                    type="date"
-                                    name="wallabag_created_at"
-                                    placeholder="Wallabag Created At"
-                                    value={formState.wallabag_created_at}
-                                    onChange={handleInputChange}
-                                />
-                                <label>
-                                    Wallabag is Archived:
-                                    <input
-                                        type="checkbox"
-                                        name="wallabag_is_archived"
-                                        checked={formState.wallabag_is_archived}
-                                        onChange={(e) =>
-                                            setFormState({...formState, wallabag_is_archived: e.target.checked})
-                                        }
-                                    />
-                                </label>
-                                <input
-                                    type="date"
-                                    name="wallabag_updated_at"
-                                    placeholder="Wallabag Updated At"
-                                    value={formState.wallabag_updated_at}
-                                    onChange={handleInputChange}
-                                />
-
 
                                 <div className={styles.modalActions}>
                                     {uiState.modalState.isEditing ? (
@@ -622,6 +606,8 @@ export default function Home({leavesData}) {
                         ))}
                     </div>
 
+
+
                     {/* Pagination controls */}
                     <div className={styles.pagination}>
                         <button
@@ -659,6 +645,7 @@ export default function Home({leavesData}) {
     );
 }
 
+
 // Static data fetching function to get leaves data
 export async function getStaticProps() {
     try {
@@ -681,9 +668,19 @@ export async function getStaticProps() {
             page++;
         }
 
+        // Fetch metadata from Xano
+        const metadataResponse = await axios.get("https://x8ki-letl-twmt.n7.xano.io/api:_YdzcIS0/metadata_table");
+        const metadata = metadataResponse.data;
+
+        // Combine useful data with metadata
+        const combinedData = allLeaves.map((item) => ({
+            ...item,
+            ...metadata.find((meta) => meta.domain_name === item.domain_name),
+        }));
+
         return {
             props: {
-                leavesData: allLeaves,
+                leavesData: combinedData,
             },
         };
     } catch (error) {
