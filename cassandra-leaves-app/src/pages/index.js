@@ -98,6 +98,39 @@ export default function Home({ leavesData }) {
         }
     }, [leavesData, leaves, setLeaves]);
 
+    const openModalForAdd = () => {
+        setFormState({
+            id: "",
+            created_at: "",
+            content: "",
+            domain_name: "",
+            http_status: "",
+            language: "",
+            last_sourced_from_wallabag: "",
+            mimetype: "",
+            preview_picture: null,
+            published_by: "",
+            tags: [],
+            title: "",
+            updated_at: "",
+            url: "",
+            user_email: "",
+            user_id: "",
+            user_name: "",
+            wallabag_created_at: "",
+            wallabag_is_archived: false,
+            wallabag_updated_at: "",
+        });
+        setUiState((prevState) => ({
+            ...prevState,
+            modalState: {
+                ...prevState.modalState,
+                isEditing: false,
+            },
+        }));
+        openModal();
+    };
+
 
     // State to manage the form fields for adding or editing records
     const [formState, setFormState] = useState({
@@ -138,7 +171,7 @@ export default function Home({ leavesData }) {
     // Memoized value to filter the leaves data based on the search query
     const filteredData = useMemo(() => {
         return (leaves || []).filter((item) =>
-            item.title.toLowerCase().includes(uiState.searchQuery.toLowerCase())
+            item.title && item.title.toLowerCase().includes(uiState.searchQuery.toLowerCase())
         );
     }, [leaves, uiState.searchQuery]);
 
@@ -419,7 +452,7 @@ export default function Home({ leavesData }) {
                             onChange={(e) => handleSearch(e.target.value)}
                             className={styles.searchBar}
                         />
-                        <button className={styles.addButton} onClick={openModal}>
+                        <button className={styles.addButton} onClick={openModalForAdd}>
                             Add Record
                         </button>
                     </div>
